@@ -1,0 +1,41 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = [ "hatchling" ]
+
+[project]
+name = "voxnorm"
+version = "0.1.0"
+description = "Text normalization for TTS: written forms into spoken forms, multilingual, pure Python"
+readme = "README.md"
+license = "Apache-2.0"
+authors = [ { name = "Allen Chou" } ]
+requires-python = ">=3.10"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Multimedia :: Sound/Audio :: Speech",
+  "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+  "num2words>=0.5.14",
+]
+
+[project.urls]
+Repository = "https://github.com/allen2c/voxnorm"
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "ruff>=0.9",
+]
+
+[tool.hatch]
+build.targets.wheel.packages = [ "voxnorm" ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = [ "tests" ]

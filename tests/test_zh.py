@@ -1,0 +1,143 @@
+"""zh-TW readings: every token class, the 兩/二 rule, and the never-guess charter."""
+
+import pytest
+
+from voxnorm import normalize
+from voxnorm.zh import digits_to_zh, number_to_zh
+
+
+@pytest.mark.parametrize(
+    ("value", "spoken"),
+    [
+        (0, "零"),
+        (2, "二"),
+        (10, "十"),
+        (12, "十二"),
+        (22, "二十二"),
+        (105, "一百零五"),
+        (112, "一百一十二"),
+        (200, "兩百"),
+        (1050, "一千零五十"),
+        (1200, "一千兩百"),
+        (2222, "兩千兩百二十二"),
+        (10000, "一萬"),
+        (20000, "兩萬"),
+        (100050, "十萬零五十"),
+        (110000, "十一萬"),
+        (10000000, "一千萬"),
+        (100002000, "一億零兩千"),
+        (100050000, "一億零五萬"),
+    ],
+)
+def test_number_to_zh(value: int, spoken: str) -> None:
+    assert number_to_zh(value) == spoken
+
+
+def test_digits_to_zh_keeps_zeros() -> None:
+    assert digits_to_zh("0912") == "零九一二"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("會議在12:00開始", "會議在十二點開始"),
+        ("下午2:00見", "下午兩點見"),
+        ("14:30退房", "十四點半退房"),
+        ("12:05提醒我", "十二點零五分提醒我"),
+        ("早上09:15", "早上九點十五分"),
+        ("22:00關門", "二十二點關門"),
+    ],
+)
+def test_times(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+def test_iso_date() -> None:
+    assert normalize("入住日期2026-08-17。") == "入住日期二零二六年八月十七日。"
+
+
+def test_month_day_already_chinese() -> None:
+    assert normalize("8月17日") == "八月十七日"
+
+
+def test_year_reads_digit_by_digit() -> None:
+    assert normalize("2026年8月") == "二零二六年八月"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("NT$1,200", "新台幣一千兩百元"),
+        ("$1,200", "一千兩百元"),
+        ("US$3.5", "三點五美元"),
+        ("含早餐NT$2,000。", "含早餐新台幣兩千元。"),
+    ],
+)
+def test_currency(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("50%", "百分之五十"),
+        ("折扣3.5%", "折扣百分之三點五"),
+    ],
+)
+def test_percent(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+def test_phone_reads_digit_by_digit() -> None:
+    assert normalize("電話是0912-345-678。") == "電話是零九一二三四五六七八。"
+
+
+def test_separatorless_phone_reads_digit_by_digit() -> None:
+    assert normalize("0912345678", lang="zh") == "零九一二三四五六七八"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("302號房", "三零二號房"),
+        ("1203號房的客人", "一二零三號房的客人"),
+        ("在517室", "在五一七室"),
+        # Two digits before 號 is a day of the month, not a room.
+        ("17號退房", "十七號退房"),
+    ],
+)
+def test_rooms(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+def test_decimal() -> None:
+    assert normalize("大約3.5小時") == "大約三點五小時"
+
+
+def test_quantity() -> None:
+    assert normalize("共有1200件") == "共有一千兩百件"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "我今天要去 Starbucks 買咖啡。",
+        "好的，沒問題。",
+        # The never-guess charter: slash forms stay written, digits included.
+        "大概1/2左右",
+        "8/17見",
+        # Version-ish strings stay whole.
+        "韌體1.2.3版",
+    ],
+)
+def test_passthrough(text: str) -> None:
+    assert normalize(text) == text
+
+
+def test_idempotent() -> None:
+    once = normalize("會議在12:00，房號302號，共NT$1,200。")
+    assert normalize(once) == once
+
+
+def test_huge_digit_run_reads_digit_by_digit() -> None:
+    assert normalize("12345678901234567", lang="zh") == digits_to_zh("12345678901234567")
