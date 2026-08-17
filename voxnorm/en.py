@@ -36,6 +36,7 @@ _CURRENCIES = {
     "$": ("dollar", "dollars"),
     "€": ("euro", "euros"),
     "¥": ("yen", "yen"),
+    "₩": ("won", "won"),
     "£": ("pound", "pounds"),
 }
 """(singular, plural) spoken after the amount. A bare `$` reads as plain
@@ -93,9 +94,6 @@ def _currency(match: re.Match) -> str:
 def _bare_int(match: re.Match) -> str:
     run = match[0]
     # A leading zero is never a quantity -- it is a code, read digit by digit.
-    # `int(run[0])`, not a literal `"0"` comparison: the scanner's `\d` also
-    # matches full-width digits, and ０５ must keep its zero the same way 05
-    # does.
     if len(run) > 1 and int(run[0]) == 0:
         return digits_to_en(run)
     return _cardinal(int(run))
@@ -112,7 +110,7 @@ _RULES = {
     # under a forced `lang="en"`: converting the digits while the CJK anchor
     # character stays behind glues English number words onto raw 年/室
     # ("twenty twenty-six年") -- worse than the written form it replaced.
-    "room_zh": lambda match: match[0],
+    "room_cjk": lambda match: match[0],
     "year": lambda match: match[0],
     "decimal": lambda match: _amount_to_en(match[0]),
     "comma_int": lambda match: _cardinal(int(match[0].replace(",", ""))),

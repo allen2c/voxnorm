@@ -13,6 +13,22 @@ def test_auto_detects_english_without_han() -> None:
     assert normalize("at 12:00") == "at twelve o'clock"
 
 
+def test_auto_detects_japanese_on_kana_before_han() -> None:
+    # 時 is a Han character; the kana は must win the detection.
+    assert normalize("会議は12:00") == "会議は十二時"
+
+
+def test_auto_detects_korean_on_hangul() -> None:
+    assert normalize("회의 12:00") == "회의 열두 시"
+
+
+def test_kanji_only_japanese_falls_to_chinese() -> None:
+    # A Japanese sentence with no kana is script-identical to Chinese; the
+    # documented behavior is the Chinese reading -- callers who know better
+    # pass lang="ja".
+    assert normalize("会議 12:00") == "会議 十二點"
+
+
 def test_hint_wins_over_script() -> None:
     assert normalize("The meeting is at 12:00", lang="zh-TW") == "The meeting is at 十二點"
 

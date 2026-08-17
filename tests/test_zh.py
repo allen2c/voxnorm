@@ -179,8 +179,11 @@ def test_invalid_clock_forms_stay_written(text: str) -> None:
     assert normalize(text, lang="zh") == text
 
 
-def test_fullwidth_leading_zero_keeps_its_zero() -> None:
-    assert normalize("０５", lang="zh") == "零五"
+def test_fullwidth_digits_stay_written() -> None:
+    # The scanner is ASCII-only: a zenkaku form passes through whole rather
+    # than half-converting around the parts the strict alternatives reject.
+    assert normalize("０５", lang="zh") == "０５"
+    assert normalize("１，２００円", lang="zh") == "１，２００円"
 
 
 def test_long_code_before_hao_reads_digit_by_digit() -> None:

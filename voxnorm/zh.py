@@ -30,6 +30,7 @@ _CURRENCIES = {
     "$": ("", "元"),
     "€": ("", "歐元"),
     "¥": ("", "日圓"),
+    "₩": ("", "韓元"),
     "£": ("", "英鎊"),
 }
 """(prefix, suffix) around the spoken amount. A bare `$` reads as 元: in this
@@ -123,15 +124,14 @@ def _iso_date(match: re.Match) -> str:
 
 def _spoken_int(digits: str) -> str:
     """Grouped reading, unless `digits` is a code: a leading zero or a run past
-    兆 range (16 digits) reads digit by digit. `int(digits[0])`, not a literal
-    `"0"` comparison -- the scanner's `\\d` also matches full-width digits, and
-    ０５ must keep its zero the same way 05 does."""
+    兆 range (16 digits) reads digit by digit. The scanner is ASCII-only, so
+    `digits` is always plain 0-9 here."""
     if (len(digits) > 1 and int(digits[0]) == 0) or len(digits) > 16:
         return digits_to_zh(digits)
     return number_to_zh(int(digits))
 
 
-def _amount_to_zh(amount: str) -> str:
+def amount_to_zh(amount: str) -> str:
     integer, _, fraction = amount.replace(",", "").partition(".")
     spoken = _spoken_int(integer)
     return f"{spoken}點{digits_to_zh(fraction)}" if fraction else spoken
@@ -139,7 +139,7 @@ def _amount_to_zh(amount: str) -> str:
 
 def _currency(match: re.Match) -> str:
     prefix, suffix = _CURRENCIES[match["cur_sym"]]
-    return f"{prefix}{_amount_to_zh(match['cur_amt'])}{suffix}"
+    return f"{prefix}{amount_to_zh(match['cur_amt'])}{suffix}"
 
 
 _RULES = {
@@ -147,11 +147,11 @@ _RULES = {
     "iso_date": _iso_date,
     "phone": lambda match: digits_to_zh(match[0]),
     "currency": _currency,
-    "percent": lambda match: f"百分之{_amount_to_zh(match['pct_num'])}",
+    "percent": lambda match: f"百分之{amount_to_zh(match['pct_num'])}",
     "room_en": lambda match: f"{match['room_word']} {digits_to_zh(match['room_num'])}",
-    "room_zh": lambda match: digits_to_zh(match[0]),
+    "room_cjk": lambda match: digits_to_zh(match[0]),
     "year": lambda match: digits_to_zh(match[0]),
-    "decimal": lambda match: _amount_to_zh(match[0]),
+    "decimal": lambda match: amount_to_zh(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),
     "bare_int": lambda match: _spoken_int(match[0]),
 }

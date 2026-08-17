@@ -10,6 +10,7 @@ readme = "README.md"
 license = "Apache-2.0"
 authors = [ { name = "Allen Chou" } ]
 requires-python = ">=3.10"
+keywords = [ "tts", "text-normalization", "speech", "zh-tw", "spoken-form", "verbalization" ]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",

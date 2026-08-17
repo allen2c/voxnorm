@@ -6,6 +6,15 @@ Order in the alternation is priority: a clock time must win over the bare
 integers inside it, a phone number over the currency-less digit runs it is
 made of.
 
+The pattern compiles with `re.ASCII`, so `\\d` means `[0-9]` and nothing
+else. Full-width (zenkaku) digits are deliberately NOT scanned: without the
+flag they matched the loose fallback alternatives but never the strict ones
+(the phone lead, the ISO-date years, the literal `%` and `,`), so
+`０９１２-３４５-６７８` half-converted into a chimera of digit-readings and
+stranded hyphens. Under the charter an unrecognised form passes through
+whole -- and TTS frontends in the locales that write zenkaku digits read
+them natively anyway.
+
 Two hard-won rules shape every alternative:
 
 - **No `\\b` against CJK.** Han characters are word characters to `re`, so
@@ -26,7 +35,7 @@ TOKEN_KINDS = (
     "currency",
     "percent",
     "room_en",
-    "room_zh",
+    "room_cjk",
     "year",
     "decimal",
     "comma_int",
@@ -39,16 +48,16 @@ TOKEN_PATTERN = re.compile(
       (?P<time>(?<![\d:])(?P<time_h>[01]?\d|2[0-3]):(?P<time_m>[0-5]\d)(?![\d:]))
     | (?P<iso_date>(?<!\d)(?P<iso_y>(?:19|20)\d\d)-(?P<iso_mo>0?[1-9]|1[0-2])-(?P<iso_d>0?[1-9]|[12]\d|3[01])(?!\d))
     | (?P<phone>(?<!\d)0\d{1,3}(?:[-\ ]\d{3,4}){2}(?![\d-]))
-    | (?P<currency>(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£)\ ?(?P<cur_amt>\d[\d,]*(?:\.\d+)?))
+    | (?P<currency>(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>\d[\d,]*(?:\.\d+)?))
     | (?P<percent>(?<![\d.])(?P<pct_num>\d[\d,]*(?:\.\d+)?)\ ?%)
     | (?P<room_en>(?P<room_word>\b[Rr]oom|\b[Ee]xt\.?|房號|分機)\ ?\#?(?P<room_num>\d{2,5})(?!\d))
-    | (?P<room_zh>(?<!\d)\d{3,10}(?=號|室))
-    | (?P<year>(?<!\d)(?:19|20)\d\d(?=年))
+    | (?P<room_cjk>(?<!\d)\d{3,10}(?=號|号|室|호))
+    | (?P<year>(?<!\d)(?:19|20)\d\d(?=年|년))
     | (?P<decimal>(?<![\d./:：])\d+\.\d+(?![\d./:：]))
     | (?P<comma_int>(?<![\d,/:：])\d{1,3}(?:,\d{3})+(?![\d,/:：]))
     | (?P<bare_int>(?<![\d./:：])\d+(?![\d./:：]))
     """,
-    re.VERBOSE,
+    re.VERBOSE | re.ASCII,
 )
 """Notes per alternative, in order:
 
@@ -61,12 +70,15 @@ TOKEN_PATTERN = re.compile(
   `02-2345-6789`, `0800-092-000`). A separator-less `0912345678` is caught by
   `bare_int`'s leading-zero rule instead.
 - `currency` — symbol before amount, the only order this package reads.
-- `room_en` / `room_zh` — a digit string read digit by digit, licensed by an
-  explicit context word. The zh suffix stays outside the match (lookahead) so
-  `302號房` keeps its 號房; the en prefix is inside and re-emitted, because a
-  variable-width lookbehind is not a thing `re` has.
-- `year` — four digits directly before 年 read digit by digit (二零二六年);
-  without the suffix a four-digit integer is a quantity.
+- `room_en` / `room_cjk` — a digit string read digit by digit, licensed by an
+  explicit context word. The CJK suffix (Traditional 號, Japanese 号/室,
+  Korean 호) stays outside the match (lookahead) so `302號房` keeps its 號房;
+  the en prefix is inside and re-emitted, because a variable-width lookbehind
+  is not a thing `re` has.
+- `year` — four digits directly before 年/년 read as a year (二零二六年
+  digit by digit in Chinese, 二千二十六年 / 이천이십육년 as cardinals in
+  Japanese and Korean — the split lives in the verbalisers); without the
+  suffix a four-digit integer is a quantity.
 - `decimal` / `comma_int` / `bare_int` — the residue: point decimals,
   comma-grouped integers, then any digit run. The lookarounds keep each from
   matching inside a form a higher alternative half-consumed, keep version-ish
