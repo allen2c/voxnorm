@@ -141,3 +141,47 @@ def test_idempotent() -> None:
 
 def test_huge_digit_run_reads_digit_by_digit() -> None:
     assert normalize("12345678901234567", lang="zh") == digits_to_zh("12345678901234567")
+
+
+@pytest.mark.parametrize(
+    ("value", "spoken"),
+    [
+        # Adversarial regression: a section merely ending in 2 keeps its 二;
+        # only a whole section of exactly 2 reads 兩 before the group unit.
+        (120000, "十二萬"),
+        (220000, "二十二萬"),
+        (320000, "三十二萬"),
+        (2000000, "兩百萬"),
+        (20000000, "兩千萬"),
+        (20002, "兩萬零二"),
+        (1200000000000, "一兆兩千億"),
+    ],
+)
+def test_number_to_zh_liang_at_group_boundaries(value: int, spoken: str) -> None:
+    assert number_to_zh(value) == spoken
+
+
+def test_number_to_zh_refuses_beyond_zhao() -> None:
+    with pytest.raises(ValueError, match="digit by digit"):
+        number_to_zh(10_000_000_000_000_000)
+
+
+def test_comma_int_beyond_zhao_reads_digit_by_digit() -> None:
+    assert normalize("100,123,456,789,012,345", lang="zh") == digits_to_zh("100123456789012345")
+
+
+def test_liang_fix_reaches_the_public_api() -> None:
+    assert normalize("NT$120,000", lang="zh") == "新台幣十二萬元"
+
+
+@pytest.mark.parametrize("text", ["24:00", "9:60", "比分是3:2"])
+def test_invalid_clock_forms_stay_written(text: str) -> None:
+    assert normalize(text, lang="zh") == text
+
+
+def test_fullwidth_leading_zero_keeps_its_zero() -> None:
+    assert normalize("０５", lang="zh") == "零五"
+
+
+def test_long_code_before_hao_reads_digit_by_digit() -> None:
+    assert normalize("123456號", lang="zh") == "一二三四五六號"

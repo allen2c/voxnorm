@@ -42,11 +42,11 @@ TOKEN_PATTERN = re.compile(
     | (?P<currency>(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£)\ ?(?P<cur_amt>\d[\d,]*(?:\.\d+)?))
     | (?P<percent>(?<![\d.])(?P<pct_num>\d[\d,]*(?:\.\d+)?)\ ?%)
     | (?P<room_en>(?P<room_word>\b[Rr]oom|\b[Ee]xt\.?|房號|分機)\ ?\#?(?P<room_num>\d{2,5})(?!\d))
-    | (?P<room_zh>(?<!\d)\d{3,5}(?=號|室))
+    | (?P<room_zh>(?<!\d)\d{3,10}(?=號|室))
     | (?P<year>(?<!\d)(?:19|20)\d\d(?=年))
-    | (?P<decimal>(?<![\d./])\d+\.\d+(?![\d./]))
-    | (?P<comma_int>(?<![\d,/])\d{1,3}(?:,\d{3})+(?![\d,/]))
-    | (?P<bare_int>(?<![\d./])\d+(?![\d./]))
+    | (?P<decimal>(?<![\d./:：])\d+\.\d+(?![\d./:：]))
+    | (?P<comma_int>(?<![\d,/:：])\d{1,3}(?:,\d{3})+(?![\d,/:：]))
+    | (?P<bare_int>(?<![\d./:：])\d+(?![\d./:：]))
     """,
     re.VERBOSE,
 )
@@ -71,7 +71,9 @@ TOKEN_PATTERN = re.compile(
   comma-grouped integers, then any digit run. The lookarounds keep each from
   matching inside a form a higher alternative half-consumed, keep version-ish
   strings (`1.2.3`) whole and untouched, and refuse any digit touching a
-  slash -- without the `/` guards the charter's "no slash form converts"
-  would hold for the form and quietly fail for the digits inside it
-  (`1/2` -> 一/二).
+  slash or a colon. The `/` guards are the charter's "no slash form converts"
+  applied to the digits inside the form (`1/2` must not become 一/二); the
+  `:`/`：` guards do the same for a colon form the `time` alternative
+  rejected -- an invalid `24:00` must stay written, not half-convert to
+  二十四:零零 around a stranded colon.
 """

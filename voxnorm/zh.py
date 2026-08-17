@@ -15,8 +15,12 @@ _DIGITS = "零一二三四五六七八九"
 _SECTION_UNITS = ("", "十", "百", "千")
 _GROUP_UNITS = ("", "萬", "億", "兆")
 
-_LIANG = re.compile("二(?=[百千萬億兆])")
-"""兩 replaces 二 exactly where a multiplier follows -- 兩百二十二, never 兩十."""
+_LIANG_IN_SECTION = re.compile("二(?=[百千])")
+"""兩 replaces 二 where a multiplier follows *within a section* -- 兩百二十二,
+never 兩十. The group units (萬/億/兆) are handled separately in
+`number_to_zh`, and only when the whole section reads 二: adversarial review
+proved a flat rule over the joined string turns 120000 into 十兩萬, because
+the 二 of 十二 happens to sit before the 萬."""
 
 _CURRENCIES = {
     "NT$": ("新台幣", "元"),
@@ -43,7 +47,14 @@ def number_to_zh(value: int) -> str:
     Standard positional reading in 4-digit sections (萬/億/兆), interior zeros
     compressed to one 零, 10-19 and 十萬-class leads dropping the leading 一
     (十二 and 十萬, but the interior 一十 of 一百一十二 stays).
+
+    Raises:
+        ValueError: At 10^16 and beyond -- 兆 is the largest unit spoken here,
+            and truncating silently was a measured bug, not a feature. Callers
+            with digit runs that long want `digits_to_zh` (`_spoken_int`).
     """
+    if value >= 10_000_000_000_000_000:
+        raise ValueError(f"{value} is beyond 兆 range; read it digit by digit instead")
     if value == 0:
         return _DIGITS[0]
     sections: list[tuple[int, str]] = []
@@ -64,12 +75,17 @@ def number_to_zh(value: int) -> str:
         # this one and the last one spoken (一億零兩千).
         if parts and (section < 1000 or previous_index != index + 1):
             parts.append(_DIGITS[0])
-        parts.append(_section_to_zh(section) + unit)
+        spoken = _LIANG_IN_SECTION.sub("兩", _section_to_zh(section))
+        # A section that is exactly 2 reads 兩 before its group unit (兩萬),
+        # but a section merely *ending* in 2 keeps its 二 (十二萬, 二十二億).
+        if unit and spoken == "二":
+            spoken = "兩"
+        parts.append(spoken + unit)
         previous_index = index
     rendered = "".join(parts)
     if rendered.startswith("一十"):
         rendered = rendered[1:]
-    return _LIANG.sub("兩", rendered)
+    return rendered
 
 
 def digits_to_zh(digits: str) -> str:
@@ -105,25 +121,25 @@ def _iso_date(match: re.Match) -> str:
     return f"{digits_to_zh(year)}年{number_to_zh(month)}月{number_to_zh(day)}日"
 
 
+def _spoken_int(digits: str) -> str:
+    """Grouped reading, unless `digits` is a code: a leading zero or a run past
+    兆 range (16 digits) reads digit by digit. `int(digits[0])`, not a literal
+    `"0"` comparison -- the scanner's `\\d` also matches full-width digits, and
+    ０５ must keep its zero the same way 05 does."""
+    if (len(digits) > 1 and int(digits[0]) == 0) or len(digits) > 16:
+        return digits_to_zh(digits)
+    return number_to_zh(int(digits))
+
+
 def _amount_to_zh(amount: str) -> str:
     integer, _, fraction = amount.replace(",", "").partition(".")
-    spoken = number_to_zh(int(integer))
+    spoken = _spoken_int(integer)
     return f"{spoken}點{digits_to_zh(fraction)}" if fraction else spoken
 
 
 def _currency(match: re.Match) -> str:
     prefix, suffix = _CURRENCIES[match["cur_sym"]]
     return f"{prefix}{_amount_to_zh(match['cur_amt'])}{suffix}"
-
-
-def _bare_int(match: re.Match) -> str:
-    run = match[0]
-    # A leading zero is never a quantity -- it is a code, read digit by digit.
-    # So is anything past 兆 range (16 digits): no sentence quantity is that
-    # long, and `number_to_zh` has no units for it.
-    if (run.startswith("0") and len(run) > 1) or len(run) > 16:
-        return digits_to_zh(run)
-    return number_to_zh(int(run))
 
 
 _RULES = {
@@ -136,6 +152,6 @@ _RULES = {
     "room_zh": lambda match: digits_to_zh(match[0]),
     "year": lambda match: digits_to_zh(match[0]),
     "decimal": lambda match: _amount_to_zh(match[0]),
-    "comma_int": lambda match: number_to_zh(int(match[0].replace(",", ""))),
-    "bare_int": _bare_int,
+    "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),
+    "bare_int": lambda match: _spoken_int(match[0]),
 }

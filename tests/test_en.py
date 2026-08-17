@@ -77,3 +77,18 @@ def test_passthrough(text: str) -> None:
 def test_idempotent() -> None:
     once = normalize("Room 302, $1,200, at 14:30.")
     assert normalize(once) == once
+
+
+@pytest.mark.parametrize("text", ["24:00", "9:60"])
+def test_invalid_clock_forms_stay_written(text: str) -> None:
+    assert normalize(text, lang="en") == text
+
+
+def test_zh_anchored_tokens_stay_written_under_forced_en() -> None:
+    # Converting the digits while 年/室 stays behind would glue English number
+    # words onto raw CJK ("twenty twenty-six年"); the zh-anchored forms stay
+    # written under a forced en hint. An unanchored digit run beside them
+    # still converts -- the caller forced English, and that is what English
+    # says for a bare number.
+    assert normalize("517室的客人", lang="en") == "517室的客人"
+    assert normalize("2026年8月", lang="en") == "2026年eight月"

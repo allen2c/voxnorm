@@ -93,7 +93,10 @@ def _currency(match: re.Match) -> str:
 def _bare_int(match: re.Match) -> str:
     run = match[0]
     # A leading zero is never a quantity -- it is a code, read digit by digit.
-    if run.startswith("0") and len(run) > 1:
+    # `int(run[0])`, not a literal `"0"` comparison: the scanner's `\d` also
+    # matches full-width digits, and ０５ must keep its zero the same way 05
+    # does.
+    if len(run) > 1 and int(run[0]) == 0:
         return digits_to_en(run)
     return _cardinal(int(run))
 
@@ -105,8 +108,12 @@ _RULES = {
     "currency": _currency,
     "percent": lambda match: f"{_amount_to_en(match['pct_num'])} percent",
     "room_en": lambda match: f"{match['room_word']} {digits_to_en(match['room_num'])}",
-    "room_zh": lambda match: digits_to_en(match[0]),
-    "year": lambda match: num2words(int(match[0]), to="year"),
+    # The zh-anchored kinds (a digit run in front of 號/室/年) stay written
+    # under a forced `lang="en"`: converting the digits while the CJK anchor
+    # character stays behind glues English number words onto raw 年/室
+    # ("twenty twenty-six年") -- worse than the written form it replaced.
+    "room_zh": lambda match: match[0],
+    "year": lambda match: match[0],
     "decimal": lambda match: _amount_to_en(match[0]),
     "comma_int": lambda match: _cardinal(int(match[0].replace(",", ""))),
     "bare_int": _bare_int,
