@@ -92,3 +92,23 @@ def test_zh_anchored_tokens_stay_written_under_forced_en() -> None:
     # says for a bare number.
     assert normalize("517室的客人", lang="en") == "517室的客人"
     assert normalize("2026年8月", lang="en") == "2026年eight月"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("ID A123456789", "ID A one two three four five six seven eight nine"),
+        ("the H1N1 strain", "the H one N one strain"),
+    ],
+)
+def test_letter_glued_digits_read_as_code(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+@pytest.mark.parametrize("text", ["COVID-19", "open 3-5 days", "call 1234-5678"])
+def test_hyphen_forms_stay_written(text: str) -> None:
+    assert normalize(text) == text
+
+
+def test_code_words() -> None:
+    assert normalize("plate 4820 is overdue", code_words=["plate"]) == "plate four eight two zero is overdue"

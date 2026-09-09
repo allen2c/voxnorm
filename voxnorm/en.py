@@ -99,6 +99,13 @@ def _bare_int(match: re.Match) -> str:
     return _cardinal(int(run))
 
 
+def _alnum(match: re.Match) -> str:
+    # A letter-glued identifier opens a space on each Latin-lettered side:
+    # `A123` is "A one two three", `H1N1` is "H one N one". Chinese needs no gap.
+    after = match.string[match.end() : match.end() + 1]
+    return " " + digits_to_en(match[0]) + (" " if after.isascii() and after.isalpha() else "")
+
+
 _RULES = {
     "time": _time,
     "iso_date": _iso_date,
@@ -111,6 +118,8 @@ _RULES = {
     # character stays behind glues English number words onto raw 年/室
     # ("twenty twenty-six年") -- worse than the written form it replaced.
     "room_cjk": lambda match: match[0],
+    "alnum": _alnum,
+    "code": lambda match: f"{match['code_pre'] or ''}{digits_to_en(match['code_num'])}",
     "year": lambda match: match[0],
     "decimal": lambda match: _amount_to_en(match[0]),
     "comma_int": lambda match: _cardinal(int(match[0].replace(",", ""))),

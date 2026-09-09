@@ -50,3 +50,12 @@ def test_unknown_lang_raises() -> None:
 
 def test_empty_text() -> None:
     assert normalize("") == ""
+
+
+def test_code_words_accept_any_iterable() -> None:
+    assert normalize("車牌4820", code_words={"車牌"}) == "車牌四八二零"
+
+
+def test_empty_code_word_raises() -> None:
+    with pytest.raises(ValueError, match="empty string"):
+        normalize("4820", code_words=[""])

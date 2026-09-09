@@ -150,6 +150,8 @@ _RULES = {
     "percent": lambda match: f"百分之{amount_to_zh(match['pct_num'])}",
     "room_en": lambda match: f"{match['room_word']} {digits_to_zh(match['room_num'])}",
     "room_cjk": lambda match: digits_to_zh(match[0]),
+    "alnum": lambda match: digits_to_zh(match[0]),
+    "code": lambda match: f"{match['code_pre'] or ''}{digits_to_zh(match['code_num'])}",
     "year": lambda match: digits_to_zh(match[0]),
     "decimal": lambda match: amount_to_zh(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),

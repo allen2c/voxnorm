@@ -34,7 +34,7 @@ Two layers, split where languages stop sharing:
 
 - **Detection is language-neutral** (`voxnorm/tokens.py`): one scanner finds
   the spans — times, ISO dates, phone numbers, currency, percentages, room
-  numbers, decimals, integers — and names their kind.
+  numbers, letter-glued identifiers, decimals, integers — and names their kind.
 - **Verbalisation is per-language** (`voxnorm/zh.py`, `cn.py`, `en.py`,
   `ja.py`, `ko.py`): a new language is a new module and one registry entry. English,
   Japanese and Korean ride on
@@ -56,8 +56,33 @@ and lands on the Chinese reading — pass `lang="ja"` when you know better.)
 
 The charter is **structural only, never guess**: a form whose reading is
 ambiguous does not convert (`1/2` the fraction and `8/17` the date are the
-same slash string, so no slash form converts at all). What is not converted is
-simply spoken as written — which is where it started.
+same slash string, so no slash form converts at all; `7-11` the shop and
+`3-5天` the range are the same hyphen string, so no hyphen form does either).
+What is not converted is simply spoken as written — which is where it started.
+
+## Codes the text does not mark
+
+Structure settles most readings: a leading zero, a letter glued on the left
+(`A123456789`), a 號 after three or more digits all say "code, digit by
+digit". What structure cannot settle is vocabulary — that the `4820` after
+車牌 or `plate` is a plate tail, not a quantity. That word list is open-ended
+and belongs to the caller, so the package takes no guess and instead accepts
+the words that settle it:
+
+```python
+>>> voxnorm.normalize("車牌4820的車款已逾期12天。", code_words=["車牌"])
+'車牌四八二零的車款已逾期十二天。'
+>>> voxnorm.normalize("請問您4820的車款繳了嗎?", code_words=["的車款"])
+'請問您四八二零的車款繳了嗎?'
+>>> voxnorm.normalize("plate 4820 is overdue", code_words=["plate"])
+'plate four eight two zero is overdue'
+```
+
+Each word is matched literally, directly before the digit run (whitespace
+allowed) or directly after it; include any connective in the word itself
+(`末四碼是`, not `末四碼`). The words are per-call and per-language — the
+same API carries 車牌, `plate`, 会員番号 and 계좌 — and a run that touches a
+larger form (`電話0912-345-678`) still takes its structural reading.
 
 ## Why not an FST toolkit
 

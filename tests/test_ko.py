@@ -67,3 +67,11 @@ def test_passthrough() -> None:
 def test_idempotent() -> None:
     once = normalize("회의는 12:00, ₩1,200입니다")
     assert normalize(once) == once
+
+
+def test_letter_glued_digits_read_as_code() -> None:
+    assert normalize("A123", lang="ko") == "A일이삼"
+
+
+def test_code_words() -> None:
+    assert normalize("계좌 1234 입니다", code_words=["계좌"]) == "계좌 일이삼사 입니다"

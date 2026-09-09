@@ -71,3 +71,7 @@ def test_iso_date() -> None:
 def test_idempotent() -> None:
     once = normalize("会议在12:00，共¥1,200。")
     assert normalize(once) == once
+
+
+def test_code_words() -> None:
+    assert normalize("车牌4820", code_words=["车牌"]) == "车牌四八二零"

@@ -70,3 +70,11 @@ def test_passthrough() -> None:
 def test_idempotent() -> None:
     once = normalize("会議は12:00、¥1,200です")
     assert normalize(once) == once
+
+
+def test_letter_glued_digits_read_as_code() -> None:
+    assert normalize("A123", lang="ja") == "A一二三"
+
+
+def test_code_words() -> None:
+    assert normalize("会員番号1234です", code_words=["会員番号"]) == "会員番号一二三四です"

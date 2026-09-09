@@ -96,6 +96,8 @@ _RULES = {
     "percent": lambda match: f"{_amount_to_ko(match['pct_num'])} 퍼센트",
     "room_en": lambda match: f"{match['room_word']} {digits_to_ko(match['room_num'])}",
     "room_cjk": lambda match: digits_to_ko(match[0]),
+    "alnum": lambda match: digits_to_ko(match[0]),
+    "code": lambda match: f"{match['code_pre'] or ''}{digits_to_ko(match['code_num'])}",
     "year": lambda match: _sino(int(match[0])),
     "decimal": lambda match: _amount_to_ko(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),

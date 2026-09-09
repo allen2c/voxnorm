@@ -82,6 +82,8 @@ _RULES = {
     "percent": lambda match: f"{_amount_to_ja(match['pct_num'])}パーセント",
     "room_en": lambda match: f"{match['room_word']} {digits_to_ja(match['room_num'])}",
     "room_cjk": lambda match: digits_to_ja(match[0]),
+    "alnum": lambda match: digits_to_ja(match[0]),
+    "code": lambda match: f"{match['code_pre'] or ''}{digits_to_ja(match['code_num'])}",
     "year": lambda match: _cardinal(int(match[0])),
     "decimal": lambda match: _amount_to_ja(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),

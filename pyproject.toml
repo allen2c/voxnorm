@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "voxnorm"
-version = "0.1.0"
+version = "0.2.0"
 description = "Text normalization for TTS: written forms into spoken forms, multilingual, pure Python"
 readme = "README.md"
 license = "Apache-2.0"

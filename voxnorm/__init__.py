@@ -51,14 +51,15 @@ detector stays the no-hint fallback.
 """
 
 import re
+from collections.abc import Iterable
 
 from voxnorm import cn, en, ja, ko, zh
-from voxnorm.tokens import TOKEN_KINDS, TOKEN_PATTERN
+from voxnorm.tokens import TOKEN_KINDS, pattern_for
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
-def normalize(text: str, lang: str | None = None) -> str:
+def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] = ()) -> str:
     """Return `text` with every recognised written form replaced by its spoken form.
 
     Args:
@@ -71,12 +72,21 @@ def normalize(text: str, lang: str | None = None) -> str:
             means Japanese, hangul Korean, a Han character Chinese (with a
             distinctive-glyph check choosing Simplified when the text shows
             it), otherwise English.
+        code_words: Words that mark the digit run next to them as a code, to
+            be read digit by digit -- `車牌`, `帳號末五碼`, `plate`, `的車款`.
+            Matched literally, directly before the digits (whitespace allowed)
+            or directly after them. This is the caller's vocabulary, not the
+            package's: whether `4820` is a plate tail or a quantity is
+            something only the text's author knows, so the scanner takes no
+            guess and the caller names the words that settle it.
 
     Raises:
-        ValueError: If `lang` names a language no verbaliser is registered for.
+        ValueError: If `lang` names a language no verbaliser is registered
+            for, or `code_words` contains an empty string.
     """
     verbalize = _VERBALIZERS[_resolve_lang(text, lang)]
-    return TOKEN_PATTERN.sub(lambda match: verbalize(_kind_of(match), match), text)
+    pattern = pattern_for(tuple(code_words))
+    return pattern.sub(lambda match: verbalize(_kind_of(match), match), text)
 
 
 _VERBALIZERS = {
@@ -139,7 +149,8 @@ def _kind_of(match: re.Match) -> str:
     (`time_h` inside `time`), `lastgroup` names whichever part matched last,
     not the class.
     """
+    groups = match.re.groupindex
     for kind in TOKEN_KINDS:
-        if match.group(kind) is not None:
+        if kind in groups and match.group(kind) is not None:
             return kind
     raise AssertionError("TOKEN_PATTERN matched outside its own kinds")

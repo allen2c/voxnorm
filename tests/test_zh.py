@@ -188,3 +188,56 @@ def test_fullwidth_digits_stay_written() -> None:
 
 def test_long_code_before_hao_reads_digit_by_digit() -> None:
     assert normalize("123456號", lang="zh") == "一二三四五六號"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # A digit run glued to a Latin letter is an identifier, never a quantity.
+        ("身分證字號A123456789。", "身分證字號A一二三四五六七八九。"),
+        ("訂單編號AB1234567已成立。", "訂單編號AB一二三四五六七已成立。"),
+    ],
+)
+def test_letter_glued_digits_read_as_code(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # Hyphen/tilde forms are ambiguous (a shop name, a range, a phone stub)
+        # and stay written whole -- they used to half-convert to 七-十一.
+        "在7-11繳的嗎?",
+        "3-5天內入帳",
+        "大約10~20分鐘",
+        "請撥1234-5678",
+        "車牌ABC-1234",
+    ],
+)
+def test_hyphen_forms_stay_written(text: str) -> None:
+    assert normalize(text) == text
+
+
+@pytest.mark.parametrize(
+    ("text", "code_words", "spoken"),
+    [
+        ("車牌1000的那筆已經入帳了。", ["車牌"], "車牌一零零零的那筆已經入帳了。"),
+        ("帳號末五碼38104。", ["帳號末五碼"], "帳號末五碼三八一零四。"),
+        # A trailing word licenses the run before it.
+        ("請問您4820的車款繳了嗎?", ["的車款"], "請問您四八二零的車款繳了嗎?"),
+        # Only the licensed run changes; the quantity in the same sentence keeps its reading.
+        ("車牌4820的車款已逾期12天。", ["車牌"], "車牌四八二零的車款已逾期十二天。"),
+        # Whitespace between word and digits is allowed.
+        ("末四碼 4820", ["末四碼"], "末四碼 四八二零"),
+        # Words are literal and adjacent: 末四碼 alone does not reach past 是.
+        ("末四碼是4820", ["末四碼"], "末四碼是四千八百二十"),
+        ("末四碼是4820", ["末四碼是"], "末四碼是四八二零"),
+        # A word absent from the text changes nothing.
+        ("本期應繳金額為12500元。", ["車牌"], "本期應繳金額為一萬兩千五百元。"),
+        # A run touching a form character falls through to the structural kinds.
+        ("電話0912-345-678。", ["電話"], "電話零九一二三四五六七八。"),
+        ("編號302號房", ["編號"], "編號三零二號房"),
+    ],
+)
+def test_code_words(text: str, code_words: list[str], spoken: str) -> None:
+    assert normalize(text, code_words=code_words) == spoken
