@@ -12,6 +12,8 @@ from decimal import Decimal
 
 from num2words import num2words
 
+from voxnorm.tokens import clock_parts
+
 _DIGIT_WORDS = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
 
 _MONTHS = (
@@ -105,14 +107,22 @@ def _cardinal(value: int) -> str:
     return num2words(value).replace(",", "")
 
 
-def _time(match: re.Match) -> str:
-    hour, minute = int(match["time_h"]), int(match["time_m"])
+def _clock(hour: int, minute: int, mark: str | None = None) -> str:
     if minute == 0:
-        # "o'clock" belongs to the twelve-hour dial; 13:00 is "thirteen hundred".
-        return f"{_cardinal(hour)} o'clock" if 1 <= hour <= 12 else f"{_cardinal(hour)} hundred"
-    if minute < 10:
-        return f"{_cardinal(hour)} oh {_DIGIT_WORDS[minute]}"
-    return f"{_cardinal(hour)} {_cardinal(minute)}"
+        spoken = _cardinal(hour)
+        if not mark:
+            # "o'clock" belongs to the twelve-hour dial; 13:00 is "thirteen hundred".
+            spoken += " o'clock" if 1 <= hour <= 12 else " hundred"
+    elif minute < 10:
+        spoken = f"{_cardinal(hour)} oh {_DIGIT_WORDS[minute]}"
+    else:
+        spoken = f"{_cardinal(hour)} {_cardinal(minute)}"
+    # The mark is spelled as letters ("nine thirty p m"), which every voice reads.
+    return f"{spoken} {mark[0]} m" if mark else spoken
+
+
+def _time_range(match: re.Match) -> str:
+    return f"{_clock(*clock_parts(match['range_from']))} to {_clock(*clock_parts(match['range_to']))}"
 
 
 def _iso_date(match: re.Match) -> str:
@@ -195,7 +205,9 @@ def _ordinal(match: re.Match) -> str:
 _RULES = {
     "markup": lambda match: match[0],
     "url_or_email": lambda match: match[0],
-    "time": _time,
+    "time_range": _time_range,
+    "time_12h": lambda match: _clock(*clock_parts(match[0])),
+    "time": lambda match: _clock(int(match["time_h"]), int(match["time_m"])),
     "iso_date": _iso_date,
     "phone": _phone,
     "currency": _currency,

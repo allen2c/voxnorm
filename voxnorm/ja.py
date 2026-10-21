@@ -15,6 +15,8 @@ import re
 
 from num2words import num2words
 
+from voxnorm.tokens import clock_parts
+
 _DIGITS = "〇一二三四五六七八九"
 
 _CURRENCIES = {
@@ -48,13 +50,17 @@ def _cardinal(value: int) -> str:
     return num2words(value, lang="ja")
 
 
-def _time(match: re.Match) -> str:
-    hour, minute = int(match["time_h"]), int(match["time_m"])
+def _clock(hour: int, minute: int, mark: str | None = None) -> str:
+    period = {"am": "午前", "pm": "午後"}.get(mark, "")
     if minute == 0:
-        return f"{_cardinal(hour)}時"
+        return f"{period}{_cardinal(hour)}時"
     if minute == 30:
-        return f"{_cardinal(hour)}時半"
-    return f"{_cardinal(hour)}時{_cardinal(minute)}分"
+        return f"{period}{_cardinal(hour)}時半"
+    return f"{period}{_cardinal(hour)}時{_cardinal(minute)}分"
+
+
+def _time_range(match: re.Match) -> str:
+    return f"{_clock(*clock_parts(match['range_from']))}から{_clock(*clock_parts(match['range_to']))}まで"
 
 
 def _iso_date(match: re.Match) -> str:
@@ -88,7 +94,9 @@ _RULES = {
     "markup": lambda match: match[0],
     "url_or_email": lambda match: match[0],
     "ordinal": lambda match: match[0],
-    "time": _time,
+    "time_range": _time_range,
+    "time_12h": lambda match: _clock(*clock_parts(match[0])),
+    "time": lambda match: _clock(int(match["time_h"]), int(match["time_m"])),
     "iso_date": _iso_date,
     "phone": _phone,
     "currency": lambda match: (

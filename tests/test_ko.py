@@ -91,6 +91,11 @@ def test_url_and_markup_pass_through() -> None:
     assert normalize('<break time="500ms"/> www.x.com/2 12', lang="ko") == '<break time="500ms"/> www.x.com/2 십이'
 
 
+def test_time_ranges_and_twelve_hour_times() -> None:
+    assert normalize("9:00-18:00", lang="ko") == "아홉 시부터 십팔 시까지"
+    assert normalize("9:30pm", lang="ko") == "오후 아홉 시 반"
+
+
 def test_currency_multiplier() -> None:
     assert normalize("₩3만", lang="ko") == "삼만 원"
 

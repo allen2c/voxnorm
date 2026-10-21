@@ -88,6 +88,11 @@ def test_url_and_markup_pass_through() -> None:
     assert normalize('<break time="500ms"/> www.x.com/2 12', lang="ja") == '<break time="500ms"/> www.x.com/2 十二'
 
 
+def test_time_ranges_and_twelve_hour_times() -> None:
+    assert normalize("9:00～18:00", lang="ja") == "九時から十八時まで"
+    assert normalize("9:30pm", lang="ja") == "午後九時半"
+
+
 def test_currency_multiplier() -> None:
     assert normalize("¥3.5万", lang="ja") == "三点五万円"
 

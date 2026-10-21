@@ -40,6 +40,8 @@ TOKEN_KINDS = (
     "markup",
     "url_or_email",
     "code",
+    "time_range",
+    "time_12h",
     "time",
     "iso_date",
     "phone",
@@ -83,6 +85,15 @@ _AMOUNT = r"(?:[1-9]\d{0,2}(?:,\d{3})+|\d+)(?:\.\d+)?"
 run (`1200`, `3.5`). A comma anywhere else (`3,50`, `1,5`, `0,123`) is a
 European decimal or a list, so the amount stops before it."""
 
+_CLOCK_12H = r"(?:1[0-2]|0?[1-9])(?::[0-5]\d)?\ ?[AaPp](?:\.[Mm]\.|[Mm])(?![A-Za-z])"
+"""A twelve-hour time: hour 1-12, optional minutes, then am/pm (`9am`,
+`9:30 PM`, `10 a.m.`). The mark settles it; without one, `9` is a number."""
+
+_CLOCK_24H = r"(?:[01]?\d|2[0-3]):[0-5]\d"
+"""A clock time, `HH:MM`, 24-hour, minutes always two digits."""
+
+_CLOCK_PARTS = re.compile(r"(\d{1,2})(?::(\d\d))?\ ?(?:([AaPp])(?:\.[Mm]\.|[Mm]))?")
+
 TOKEN_PATTERN = re.compile(
     rf"""
       (?P<markup>
@@ -94,6 +105,8 @@ TOKEN_PATTERN = re.compile(
         (?:https?://|www\.)[A-Za-z0-9\-._~:/?\#\[\]@!$&'()*+,;=%]+
       | [A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)+
       )
+    | (?P<time_range>{_STARTS_CLEAN}(?P<range_from>{_CLOCK_12H}|{_CLOCK_24H})\ ?[-~～–]\ ?(?P<range_to>{_CLOCK_12H}|{_CLOCK_24H}){_ENDS_CLEAN})
+    | (?P<time_12h>{_STARTS_CLEAN}{_CLOCK_12H}{_ENDS_CLEAN})
     | (?P<time>{_STARTS_CLEAN}(?P<time_h>[01]?\d|2[0-3]):(?P<time_m>[0-5]\d){_ENDS_CLEAN})
     | (?P<iso_date>{_STARTS_CLEAN}(?P<iso_y>(?:19|20)\d\d)-(?P<iso_mo>0?[1-9]|1[0-2])-(?P<iso_d>0?[1-9]|[12]\d|3[01]){_ENDS_CLEAN})
     | (?P<phone>
@@ -131,6 +144,14 @@ TOKEN_PATTERN = re.compile(
 - `url_or_email` — a URL (`https://…`, `www.…`) or an email address,
   returned unchanged: its digits are path, query and host parts
   (`?id=5&p=10`, `a12345.lee@…`), not quantities.
+- `time_range` — two clock times, 24-hour or twelve-hour, joined by a
+  hyphen, tilde or en-dash, spaces allowed (`8:00-17:00`, `9:00～18:00`,
+  `9am-6pm`). A dash between two clock times is never a minus or a code, so
+  it reads as "to"; `range_from` / `range_to` hold the written times, which
+  verbalisers split with `clock_parts`.
+- `time_12h` — a twelve-hour time with its am/pm mark (`9:30am`,
+  `10:00 AM`, `9 p.m.`), hour 1-12. Without the mark `9` is a number and
+  `9:30` a 24-hour time.
 - `time` — `HH:MM`, 24-hour, minutes always two digits; the trailing guard
   keeps `12:00:05` (a duration with seconds, unhandled) from half-matching.
 - `iso_date` — `YYYY-MM-DD` with a plausibility window on every field, so an
@@ -246,3 +267,14 @@ def pattern_for(code_words: tuple[str, ...]) -> re.Pattern:
       )
     | """
     return re.compile(code + TOKEN_PATTERN.pattern, re.VERBOSE | re.ASCII)
+
+
+def clock_parts(written: str) -> tuple[int, int, str | None]:
+    """Split a written clock time into (hour, minute, mark).
+
+    `mark` is "am", "pm", or None for a 24-hour time: `9:30 PM` ->
+    (9, 30, "pm"), `17:00` -> (17, 0, None). Only for strings the scanner
+    matched as `time_12h` or a `time_range` end.
+    """
+    hour, minute, mark = _CLOCK_PARTS.match(written).groups()
+    return int(hour), int(minute or 0), mark and f"{mark.lower()}m"

@@ -497,6 +497,30 @@ def test_two_before_a_magnitude_reads_liang(text: str, spoken: str) -> None:
 @pytest.mark.parametrize(
     ("text", "spoken"),
     [
+        # A dash between two clock times reads 到.
+        ("營業時間8:00-17:00", "營業時間八點到十七點"),
+        ("9:00～18:00", "九點到十八點"),
+        ("9:30 - 21:30", "九點半到二十一點半"),
+        # am/pm becomes the period word in front.
+        ("10:00 AM", "上午十點"),
+        ("下班時間6pm", "下班時間下午六點"),
+        ("12pm", "中午十二點"),
+        ("12am", "凌晨十二點"),
+        ("9am-6pm", "上午九點到下午六點"),
+    ],
+)
+def test_time_ranges_and_twelve_hour_times(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+@pytest.mark.parametrize("text", ["8:00-17:00-1", "1-8:00-17:00", "12:00:05", "3:2"])
+def test_time_lookalikes_stay_written(text: str) -> None:
+    assert normalize(text, lang="zh") == text
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
         # A lone 2 before a measure word is a count: 兩.
         ("共2位成人，入住2晚", "共兩位成人，入住兩晚"),
         ("約2小時", "約兩小時"),

@@ -11,6 +11,8 @@ throughout, 台 not 臺.
 
 import re
 
+from voxnorm.tokens import clock_parts
+
 _DIGITS = "零一二三四五六七八九"
 _SECTION_UNITS = ("", "十", "百", "千")
 _GROUP_UNITS = ("", "萬", "億", "兆")
@@ -148,14 +150,20 @@ def _hour_to_zh(hour: int) -> str:
     return "兩" if hour == 2 else number_to_zh(hour)
 
 
-def _time(match: re.Match) -> str:
-    hour, minute = int(match["time_h"]), int(match["time_m"])
+def _clock(hour: int, minute: int, mark: str | None = None) -> str:
+    # am/pm becomes the period word in front: 上午/下午, and for twelve o'clock
+    # 凌晨 (midnight) or 中午 (noon).
+    period = {"am": "凌晨" if hour == 12 else "上午", "pm": "中午" if hour == 12 else "下午"}.get(mark, "")
     if minute == 0:
-        return f"{_hour_to_zh(hour)}點"
+        return f"{period}{_hour_to_zh(hour)}點"
     if minute == 30:
-        return f"{_hour_to_zh(hour)}點半"
+        return f"{period}{_hour_to_zh(hour)}點半"
     spoken_minute = f"零{_DIGITS[minute]}" if minute < 10 else number_to_zh(minute)
-    return f"{_hour_to_zh(hour)}點{spoken_minute}分"
+    return f"{period}{_hour_to_zh(hour)}點{spoken_minute}分"
+
+
+def _time_range(match: re.Match) -> str:
+    return f"{_clock(*clock_parts(match['range_from']))}到{_clock(*clock_parts(match['range_to']))}"
 
 
 def _iso_date(match: re.Match) -> str:
@@ -199,7 +207,9 @@ _RULES = {
     "markup": lambda match: match[0],
     "url_or_email": lambda match: match[0],
     "ordinal": lambda match: match[0],
-    "time": _time,
+    "time_range": _time_range,
+    "time_12h": lambda match: _clock(*clock_parts(match[0])),
+    "time": lambda match: _clock(int(match["time_h"]), int(match["time_m"])),
     "iso_date": _iso_date,
     "phone": _phone,
     "currency": _currency,

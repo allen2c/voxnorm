@@ -222,6 +222,20 @@ def test_money_with_cents(text: str, spoken: str) -> None:
     assert normalize(text) == spoken
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("at 9:30pm", "at nine thirty p m"),
+        ("at 10 a.m. sharp", "at ten a m sharp"),
+        ("Open 9am-6pm.", "Open nine a m to six p m."),
+        ("9:00 AM - 6:00 PM", "nine a m to six p m"),
+        ("8:00-17:00", "eight o'clock to seventeen hundred"),
+    ],
+)
+def test_time_ranges_and_twelve_hour_times(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
 def test_cardinals_carry_no_comma_pause() -> None:
     assert normalize("1100") == "one thousand one hundred"
 
@@ -230,7 +244,7 @@ def test_cardinals_carry_no_comma_pause() -> None:
     ("text", "spoken"),
     [
         # Spoken words never touch a Latin letter of the surrounding text.
-        ("open 9:30am", "open nine thirty am"),
+        ("open 9:30am", "open nine thirty a m"),
         ("4K video", "four K video"),
         ("2026-08-17T10:00", "August seventeenth, twenty twenty-six T ten o'clock"),
     ],

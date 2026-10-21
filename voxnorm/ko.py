@@ -14,6 +14,8 @@ import re
 
 from num2words import num2words
 
+from voxnorm.tokens import clock_parts
+
 _DIGITS = ("공", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구")
 
 _NATIVE_HOURS = ("영", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두")
@@ -56,14 +58,18 @@ def _sino(value: int) -> str:
     return num2words(value, lang="ko")
 
 
-def _time(match: re.Match) -> str:
-    hour, minute = int(match["time_h"]), int(match["time_m"])
+def _clock(hour: int, minute: int, mark: str | None = None) -> str:
+    period = {"am": "오전 ", "pm": "오후 "}.get(mark, "")
     spoken_hour = _NATIVE_HOURS[hour] if 1 <= hour <= 12 else _sino(hour)
     if minute == 0:
-        return f"{spoken_hour} 시"
+        return f"{period}{spoken_hour} 시"
     if minute == 30:
-        return f"{spoken_hour} 시 반"
-    return f"{spoken_hour} 시 {_sino(minute)} 분"
+        return f"{period}{spoken_hour} 시 반"
+    return f"{period}{spoken_hour} 시 {_sino(minute)} 분"
+
+
+def _time_range(match: re.Match) -> str:
+    return f"{_clock(*clock_parts(match['range_from']))}부터 {_clock(*clock_parts(match['range_to']))}까지"
 
 
 def _iso_date(match: re.Match) -> str:
@@ -109,7 +115,9 @@ _RULES = {
     "markup": lambda match: match[0],
     "url_or_email": lambda match: match[0],
     "ordinal": lambda match: match[0],
-    "time": _time,
+    "time_range": _time_range,
+    "time_12h": lambda match: _clock(*clock_parts(match[0])),
+    "time": lambda match: _clock(int(match["time_h"]), int(match["time_m"])),
     "iso_date": _iso_date,
     "phone": _phone,
     "currency": lambda match: (
