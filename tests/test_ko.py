@@ -96,6 +96,11 @@ def test_time_ranges_and_twelve_hour_times() -> None:
     assert normalize("9:30pm", lang="ko") == "오후 아홉 시 반"
 
 
+def test_temperatures_and_units() -> None:
+    assert normalize("-5°C", lang="ko") == "섭씨 영하 오 도"
+    assert normalize("60km/h", lang="ko") == "시속 육십 킬로미터"
+
+
 def test_currency_multiplier() -> None:
     assert normalize("₩3만", lang="ko") == "삼만 원"
 

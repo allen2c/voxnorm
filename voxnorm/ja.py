@@ -35,6 +35,21 @@ _CURRENCIES = {
 _MULTIPLIERS = {"千": "千", "천": "千", "萬": "万", "万": "万", "만": "万", "億": "億", "亿": "億", "억": "億"}
 """A CJK multiplier written after a currency amount, in Japanese glyphs."""
 
+_UNIT_READINGS = {
+    "kg": "{}キログラム",
+    "km/h": "時速{}キロメートル",
+    "km": "{}キロメートル",
+    "cm": "{}センチメートル",
+    "mm": "{}ミリメートル",
+    "mg": "{}ミリグラム",
+    "ml": "{}ミリリットル",
+    "mL": "{}ミリリットル",
+    "m²": "{}平方メートル",
+    "㎡": "{}平方メートル",
+}
+"""The Japanese reading of each metric symbol the `unit` kind accepts, as a
+template around the spoken number (speed is 時速 in front)."""
+
 
 def verbalize(kind: str, match: re.Match) -> str:
     """Spell the token `match` of class `kind` the way Japanese says it."""
@@ -103,6 +118,12 @@ _RULES = {
         f"{_amount_to_ja(match['cur_amt'])}{_MULTIPLIERS.get(match['cur_mult'], '')}{_CURRENCIES[match['cur_sym']]}"
     ),
     "percent": lambda match: f"{_amount_to_ja(match['pct_num'])}パーセント",
+    "temperature": lambda match: (
+        ("華氏" if match["temp_unit"] in ("℉", "°F", "° F") else "摂氏")
+        + ("マイナス" if match["temp_minus"] else "")
+        + f"{_amount_to_ja(match['temp_num'])}度"
+    ),
+    "unit": lambda match: _UNIT_READINGS[match["unit_sym"]].format(_amount_to_ja(match["unit_num"])),
     "room_en": lambda match: f"{match['room_word']} {digits_to_ja(match['room_num'])}",
     "room_cjk": lambda match: digits_to_ja(match[0]),
     "alnum": lambda match: digits_to_ja(match[0]),

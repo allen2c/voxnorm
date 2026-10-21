@@ -92,6 +92,11 @@ def test_two_before_a_measure_word_reads_liang() -> None:
     assert normalize("2张票，2个小时", lang="zh-CN") == "两张票，两个小时"
 
 
+def test_temperatures_and_units() -> None:
+    assert normalize("25℃", lang="zh-CN") == "摄氏二十五度"
+    assert normalize("5cm，100㎡，60km/h", lang="zh-CN") == "五厘米，一百平方米，时速六十公里"
+
+
 def test_currency_multiplier() -> None:
     assert normalize("¥2万", lang="zh-CN") == "两万元"
     assert normalize("¥3.5亿元", lang="zh-CN") == "三点五亿元"

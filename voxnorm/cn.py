@@ -26,11 +26,24 @@ _TO_SIMPLIFIED = str.maketrans(
         "韓": "韩",
         "圓": "元",
         "轉": "转",
+        "攝": "摄",
+        "華": "华",
     }
 )
 """Every character the zh verbaliser can emit that differs in Simplified
 script. Not a general converter -- the domain is exactly `zh.py`'s own output
 vocabulary, which is what keeps a one-table re-spelling honest."""
+
+_UNIT_READINGS = {
+    **zh.UNIT_READINGS,
+    "km/h": "时速{}公里",
+    "cm": "{}厘米",
+    "mm": "{}毫米",
+    "m²": "{}平方米",
+    "㎡": "{}平方米",
+}
+"""The mainland metric words where they are words, not glyphs, apart from
+zh-TW (公分 / 厘米, 公釐 / 毫米, 平方公尺 / 平方米)."""
 
 
 def verbalize(kind: str, match: re.Match) -> str:
@@ -38,4 +51,6 @@ def verbalize(kind: str, match: re.Match) -> str:
     if kind == "currency" and match["cur_sym"] == "¥":
         # In the mainland locale ¥ is renminbi (元), not the yen zh-TW reads.
         return f"{zh.currency_amount_to_zh(match).translate(_TO_SIMPLIFIED)}元"
+    if kind == "unit":
+        return _UNIT_READINGS[match["unit_sym"]].format(zh.count_to_zh(match["unit_num"]).translate(_TO_SIMPLIFIED))
     return zh.verbalize(kind, match).translate(_TO_SIMPLIFIED)

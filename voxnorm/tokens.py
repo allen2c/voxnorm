@@ -47,6 +47,8 @@ TOKEN_KINDS = (
     "phone",
     "currency",
     "percent",
+    "temperature",
+    "unit",
     "ordinal",
     "room_en",
     "alnum",
@@ -108,7 +110,7 @@ TOKEN_PATTERN = re.compile(
     | (?P<time_range>{_STARTS_CLEAN}(?P<range_from>{_CLOCK_12H}|{_CLOCK_24H})\ ?[-~～–]\ ?(?P<range_to>{_CLOCK_12H}|{_CLOCK_24H}){_ENDS_CLEAN})
     | (?P<time_12h>{_STARTS_CLEAN}{_CLOCK_12H}{_ENDS_CLEAN})
     | (?P<time>{_STARTS_CLEAN}(?P<time_h>[01]?\d|2[0-3]):(?P<time_m>[0-5]\d){_ENDS_CLEAN})
-    | (?P<iso_date>{_STARTS_CLEAN}(?P<iso_y>(?:19|20)\d\d)-(?P<iso_mo>0?[1-9]|1[0-2])-(?P<iso_d>0?[1-9]|[12]\d|3[01]){_ENDS_CLEAN})
+    | (?P<iso_date>{_STARTS_CLEAN}(?P<iso_y>(?:19|20)\d\d)(?P<iso_sep>[-/])(?P<iso_mo>0?[1-9]|1[0-2])(?P=iso_sep)(?P<iso_d>0?[1-9]|[12]\d|3[01]){_ENDS_CLEAN})
     | (?P<phone>
         (?P<phone_num>
           (?<![\w+])(?P<phone_plus>\+)
@@ -122,6 +124,11 @@ TOKEN_PATTERN = re.compile(
       )
     | (?P<currency>(?<![\d\-+/.$€¥£₩\#_=])(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>{_AMOUNT})(?P<cur_mult>[千萬万億亿천만억])?(?![千萬万億亿천만억])(?:\ ?元)?{_ENDS_CLEAN})
     | (?P<percent>{_STARTS_CLEAN}(?P<pct_num>{_AMOUNT})\ ?%)
+    | (?P<temperature>
+        (?:(?<![\w.\-])(?P<temp_minus>-)|{_STARTS_CLEAN})
+        (?P<temp_num>\d+(?:\.\d+)?)\ ?(?P<temp_unit>°\ ?[CF]|℃|℉)(?![A-Za-z])
+      )
+    | (?P<unit>{_STARTS_CLEAN}(?P<unit_num>{_AMOUNT})\ ?(?P<unit_sym>km/h|kg|km|cm|mm|mg|ml|mL|m²|㎡)(?![\w²/]))
     | (?P<ordinal>(?<![A-Za-z]){_STARTS_CLEAN}(?P<ord_num>\d{{1,6}})(?P<ord_suffix>st|nd|rd|th|ST|ND|RD|TH)(?![A-Za-z\d]))
     | (?P<room_en>(?P<room_word>(?<![A-Za-z])(?:[Rr]oom|[Ee]xt\.?)|房號|分機)\ ?\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
     | (?P<alnum>(?:(?<=[A-Za-z])(?<!\d[xX])|(?<=[*＊●•]{{3}})(?=\d+(?![\d*＊])))\d+{_ENDS_CLEAN})
@@ -154,8 +161,12 @@ TOKEN_PATTERN = re.compile(
   `9:30` a 24-hour time.
 - `time` — `HH:MM`, 24-hour, minutes always two digits; the trailing guard
   keeps `12:00:05` (a duration with seconds, unhandled) from half-matching.
-- `iso_date` — `YYYY-MM-DD` with a plausibility window on every field, so an
-  id-like `1234-56-78` stays text.
+- `iso_date` — `YYYY-MM-DD` or `YYYY/MM/DD` (one separator throughout,
+  `iso_sep`) with a plausibility window on every field, so an id-like
+  `1234-56-78` stays text. The four-digit 19xx/20xx lead is what lets a
+  slash form convert: no fraction has three fields, while `10/16` (a date
+  or a fraction) and `115/10/16` (a ROC date whose 民國 is implied) stay
+  written.
 - `phone` — the number (`phone_num`) in one of three shapes, each settled by
   a mark no quantity carries:
   - a leading-zero group and either two or three 3-4 digit groups
@@ -187,6 +198,16 @@ TOKEN_PATTERN = re.compile(
   amount may not stop in front of a second multiplier, which would put the
   unit in the middle (一元萬二千), so the symbol and its first part stay
   written.
+- `temperature` — a number with a degree-Celsius or -Fahrenheit sign
+  (`25°C`, `25 °F`, `25℃`). A `-` directly before it is a minus only when
+  no digit, letter or point precedes the `-` (`-5°C`, `氣溫-5°C`); in
+  `3-5°C` it is a range and the whole form stays written. A bare `25°` is
+  an angle as often as a temperature and is left alone.
+- `unit` — a number with an unambiguous metric symbol (`5kg`, `3.5 km`,
+  `100m²`, `60km/h`): km/h, kg, km, cm, mm, mg, ml, m², ㎡. Bare `m`, `g`,
+  `K`, `G` are left out (meter or minute, gram or giga, Kelvin or thousand).
+  Any other symbol followed by `/` is part of a compound unit (`5kg/m²`) and
+  the form stays written.
 - `ordinal` — an English ordinal suffix glued to a number (`1st`, `22nd`,
   `10th`). The verbaliser reads it only when the suffix matches the number
   (`1st`, not `1th`); a mismatched one, and every non-English language,

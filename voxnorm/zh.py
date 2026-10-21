@@ -42,6 +42,21 @@ _MULTIPLIERS = {"千": "千", "천": "千", "萬": "萬", "万": "萬", "만": "
 """A currency amount's written multiplier, spoken in Traditional glyphs (the
 zh-CN verbaliser re-spells them)."""
 
+UNIT_READINGS = {
+    "kg": "{}公斤",
+    "km/h": "時速{}公里",
+    "km": "{}公里",
+    "cm": "{}公分",
+    "mm": "{}公釐",
+    "mg": "{}毫克",
+    "ml": "{}毫升",
+    "mL": "{}毫升",
+    "m²": "{}平方公尺",
+    "㎡": "{}平方公尺",
+}
+"""The zh-TW reading of each metric symbol the `unit` kind accepts, as a
+template around the spoken number (speed is 時速 in front, not a suffix)."""
+
 _MAGNITUDES = frozenset("百千萬万億亿兆")
 """Characters after which a written 2 is a count of that magnitude (兩萬)."""
 
@@ -126,15 +141,15 @@ def amount_to_zh(amount: str) -> str:
     return f"{spoken}點{digits_to_zh(fraction)}" if fraction else spoken
 
 
-def currency_amount_to_zh(match: re.Match) -> str:
-    """The amount of a `currency` match, multiplier included: `3.5萬` -> 三點五萬.
+def count_to_zh(amount: str) -> str:
+    """A written amount that counts something (money, kilograms): as
+    `amount_to_zh`, except exactly 2 reads 兩 (兩元, 兩公斤), never 二."""
+    return "兩" if amount == "2" else amount_to_zh(amount)
 
-    An amount of exactly 2 is a count of money, so it reads 兩 (兩元, 兩萬元),
-    never the 二 a bare digit string would take.
-    """
-    amount = match["cur_amt"]
-    spoken = "兩" if amount == "2" else amount_to_zh(amount)
-    return spoken + _MULTIPLIERS.get(match["cur_mult"], "")
+
+def currency_amount_to_zh(match: re.Match) -> str:
+    """The amount of a `currency` match, multiplier included: `3.5萬` -> 三點五萬."""
+    return count_to_zh(match["cur_amt"]) + _MULTIPLIERS.get(match["cur_mult"], "")
 
 
 def _section_to_zh(section: int) -> str:
@@ -160,6 +175,12 @@ def _clock(hour: int, minute: int, mark: str | None = None) -> str:
         return f"{period}{_hour_to_zh(hour)}點半"
     spoken_minute = f"零{_DIGITS[minute]}" if minute < 10 else number_to_zh(minute)
     return f"{period}{_hour_to_zh(hour)}點{spoken_minute}分"
+
+
+def _temperature(match: re.Match) -> str:
+    scale = "華氏" if match["temp_unit"] in ("℉", "°F", "° F") else "攝氏"
+    minus = "零下" if match["temp_minus"] else ""
+    return f"{scale}{minus}{amount_to_zh(match['temp_num'])}度"
 
 
 def _time_range(match: re.Match) -> str:
@@ -214,6 +235,8 @@ _RULES = {
     "phone": _phone,
     "currency": _currency,
     "percent": lambda match: f"百分之{amount_to_zh(match['pct_num'])}",
+    "temperature": _temperature,
+    "unit": lambda match: UNIT_READINGS[match["unit_sym"]].format(count_to_zh(match["unit_num"])),
     "room_en": lambda match: f"{match['room_word']} {digits_to_zh(match['room_num'])}",
     "room_cjk": lambda match: digits_to_zh(match[0]),
     "alnum": lambda match: digits_to_zh(match[0]),

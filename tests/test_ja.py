@@ -93,6 +93,11 @@ def test_time_ranges_and_twelve_hour_times() -> None:
     assert normalize("9:30pm", lang="ja") == "午後九時半"
 
 
+def test_temperatures_and_units() -> None:
+    assert normalize("-5°C", lang="ja") == "摂氏マイナス五度"
+    assert normalize("5kg、60km/h", lang="ja") == "五キログラム、時速六十キロメートル"
+
+
 def test_currency_multiplier() -> None:
     assert normalize("¥3.5万", lang="ja") == "三点五万円"
 

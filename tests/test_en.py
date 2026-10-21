@@ -236,6 +236,21 @@ def test_time_ranges_and_twelve_hour_times(text: str, spoken: str) -> None:
     assert normalize(text) == spoken
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("on 2026/10/16", "on October sixteenth, twenty twenty-six"),
+        ("98.6°F", "ninety-eight point six degrees Fahrenheit"),
+        ("-5°C", "minus five degrees Celsius"),
+        ("1kg", "one kilogram"),
+        ("3.5 km", "three point five kilometers"),
+        ("60km/h", "sixty kilometers per hour"),
+    ],
+)
+def test_dates_temperatures_and_units(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
 def test_cardinals_carry_no_comma_pause() -> None:
     assert normalize("1100") == "one thousand one hundred"
 

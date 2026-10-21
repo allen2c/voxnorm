@@ -57,6 +57,20 @@ _MULTIPLIERS = {
 }
 """A CJK multiplier written after a currency amount, as the factor to apply."""
 
+_UNIT_WORDS = {
+    "kg": ("kilogram", "kilograms"),
+    "km/h": ("kilometer per hour", "kilometers per hour"),
+    "km": ("kilometer", "kilometers"),
+    "cm": ("centimeter", "centimeters"),
+    "mm": ("millimeter", "millimeters"),
+    "mg": ("milligram", "milligrams"),
+    "ml": ("milliliter", "milliliters"),
+    "mL": ("milliliter", "milliliters"),
+    "m²": ("square meter", "square meters"),
+    "㎡": ("square meter", "square meters"),
+}
+"""(singular, plural) for each metric symbol the `unit` kind accepts."""
+
 _MINOR_UNITS = {
     "NT$": ("cent", "cents"),
     "NTD": ("cent", "cents"),
@@ -119,6 +133,19 @@ def _clock(hour: int, minute: int, mark: str | None = None) -> str:
         spoken = f"{_cardinal(hour)} {_cardinal(minute)}"
     # The mark is spelled as letters ("nine thirty p m"), which every voice reads.
     return f"{spoken} {mark[0]} m" if mark else spoken
+
+
+def _temperature(match: re.Match) -> str:
+    scale = "Fahrenheit" if match["temp_unit"] in ("℉", "°F", "° F") else "Celsius"
+    number = match["temp_num"]
+    minus = "minus " if match["temp_minus"] else ""
+    return f"{minus}{_amount_to_en(number)} {'degree' if number == '1' else 'degrees'} {scale}"
+
+
+def _unit(match: re.Match) -> str:
+    number = match["unit_num"]
+    singular, plural = _UNIT_WORDS[match["unit_sym"]]
+    return f"{_amount_to_en(number)} {singular if number == '1' else plural}"
 
 
 def _time_range(match: re.Match) -> str:
@@ -212,6 +239,8 @@ _RULES = {
     "phone": _phone,
     "currency": _currency,
     "percent": lambda match: f"{_amount_to_en(match['pct_num'])} percent",
+    "temperature": _temperature,
+    "unit": _unit,
     "room_en": lambda match: f"{match['room_word']} {digits_to_en(match['room_num'])}",
     # The zh-anchored kinds (a digit run in front of 號/室/年) stay written
     # under a forced `lang="en"`: converting the digits while the CJK anchor

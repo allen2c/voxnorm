@@ -43,6 +43,21 @@ _CURRENCIES = {
 _MULTIPLIERS = {"千": "천", "천": "천", "萬": "만", "万": "만", "만": "만", "億": "억", "亿": "억", "억": "억"}
 """A CJK multiplier written after a currency amount, as the Korean unit word."""
 
+_UNIT_READINGS = {
+    "kg": "{} 킬로그램",
+    "km/h": "시속 {} 킬로미터",
+    "km": "{} 킬로미터",
+    "cm": "{} 센티미터",
+    "mm": "{} 밀리미터",
+    "mg": "{} 밀리그램",
+    "ml": "{} 밀리리터",
+    "mL": "{} 밀리리터",
+    "m²": "{} 제곱미터",
+    "㎡": "{} 제곱미터",
+}
+"""The Korean reading of each metric symbol the `unit` kind accepts, as a
+template around the spoken number (speed is 시속 in front)."""
+
 
 def verbalize(kind: str, match: re.Match) -> str:
     """Spell the token `match` of class `kind` the way Korean says it."""
@@ -124,6 +139,12 @@ _RULES = {
         f"{_amount_to_ko(match['cur_amt'])}{_MULTIPLIERS.get(match['cur_mult'], '')} {_CURRENCIES[match['cur_sym']]}"
     ),
     "percent": lambda match: f"{_amount_to_ko(match['pct_num'])} 퍼센트",
+    "temperature": lambda match: (
+        ("화씨 " if match["temp_unit"] in ("℉", "°F", "° F") else "섭씨 ")
+        + ("영하 " if match["temp_minus"] else "")
+        + f"{_amount_to_ko(match['temp_num'])} 도"
+    ),
+    "unit": lambda match: _UNIT_READINGS[match["unit_sym"]].format(_amount_to_ko(match["unit_num"])),
     "room_en": lambda match: f"{match['room_word']} {digits_to_ko(match['room_num'])}",
     "room_cjk": lambda match: digits_to_ko(match[0]),
     "alnum": lambda match: digits_to_ko(match[0]),

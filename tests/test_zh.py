@@ -513,6 +513,32 @@ def test_time_ranges_and_twelve_hour_times(text: str, spoken: str) -> None:
     assert normalize(text, lang="zh") == spoken
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # A slash date with a four-digit 19xx/20xx year reads like the ISO form.
+        ("入住2026/10/16", "入住二零二六年十月十六日"),
+        # Temperatures; a minus only with no digit or letter before it.
+        ("今天25°C", "今天攝氏二十五度"),
+        ("氣溫-5°C", "氣溫攝氏零下五度"),
+        ("25℃", "攝氏二十五度"),
+        ("100°F", "華氏一百度"),
+        # Unambiguous metric symbols; 2 of a unit is a count, 兩.
+        ("重2kg", "重兩公斤"),
+        ("約3.5km", "約三點五公里"),
+        ("100m²", "一百平方公尺"),
+        ("60km/h", "時速六十公里"),
+    ],
+)
+def test_dates_temperatures_and_units(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+@pytest.mark.parametrize("text", ["10/16", "115/10/16", "2026/10-16", "3-5°C"])
+def test_date_and_temperature_lookalikes_stay_written(text: str) -> None:
+    assert normalize(text, lang="zh") == text
+
+
 @pytest.mark.parametrize("text", ["8:00-17:00-1", "1-8:00-17:00", "12:00:05", "3:2"])
 def test_time_lookalikes_stay_written(text: str) -> None:
     assert normalize(text, lang="zh") == text
