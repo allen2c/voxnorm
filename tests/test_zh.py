@@ -270,6 +270,42 @@ def test_phone_shapes(text: str, spoken: str) -> None:
 
 
 @pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # Spaces around the extension mark; separator-less number with an extension.
+        ("(02)8979-8888 轉 123", "零二八九七九八八八八轉一二三"),
+        ("0912345678#12", "零九一二三四五六七八轉一二"),
+        # Space-separated groups after a parenthesised area code.
+        ("(02) 2345 6789", "零二二三四五六七八九"),
+        # A parenthesised area code after a country code.
+        ("+886 (02) 8979-8888", "加八八六零二八九七九八八八八"),
+        # Three groups after the lead zero.
+        ("0912 345 678 999", "零九一二三四五六七八九九九"),
+        # A number after the phone, past a space, is its own token.
+        ("0912-345-678 3點", "零九一二三四五六七八 三點"),
+        # A code word yields the extension to the phone.
+        ("撥打 02-8979-8888#123", "撥打 零二八九七九八八八八轉一二三"),
+    ],
+)
+def test_phone_edges(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh", code_words=["撥打"]) == spoken
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # A too-long extension is not an extension: the whole form stays written.
+        "02-8979-8888#1234567",
+        # A sign is not a country code.
+        "+5分",
+        "#3",
+    ],
+)
+def test_phone_lookalikes_stay_written(text: str) -> None:
+    assert normalize(text, lang="zh") == text
+
+
+@pytest.mark.parametrize(
     "text",
     [
         # Without a lead zero, parentheses or `+`, a 4-4 group is the same

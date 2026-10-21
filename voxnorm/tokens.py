@@ -57,17 +57,19 @@ TOKEN_KINDS = (
 top-level groups of `TOKEN_PATTERN`. `markup` is matched only so that it is
 left alone: every verbaliser returns it unchanged."""
 
-_STARTS_CLEAN = r"(?<![\d\-/.$€¥£₩])(?<!\d[,:：~～–])"
-"""A form may start here: no digit, minus/hyphen, slash, point or currency
-symbol directly before it (`-5`, `1/2`, `.5`, `1.2`, and the `5` of a `-$5`
-the currency form refused), and no comma, colon, tilde or en-dash
+_STARTS_CLEAN = r"(?<![\d\-+/.$€¥£₩\#])(?<!\d[,:：~～–])"
+"""A form may start here: no digit, sign, slash, point, currency symbol or
+`#` directly before it (`-5`, `+5`, `1/2`, `.5`, `1.2`, the `5` of a
+`-$5` the currency form refused, the `#1234567` a phone refused as its
+extension), and no comma, colon, tilde or en-dash
 with a digit before *that* (`3,4`, `3:2`, `10~20`). A separator after a word
 is punctuation, not part of a form: `金額：1,200`, `3, 4`, `元～2,000` start
 clean."""
 
-_ENDS_CLEAN = r"(?![\d\-~～–%@])(?!\.[\dA-Za-z])(?![,:：/]\d)"
-"""A form may end here: no digit, hyphen, tilde, en-dash, `%` or `@` directly
-after it (`7-11`, `10~20`, `a12@x`), no point with a digit or Latin letter
+_ENDS_CLEAN = r"(?![\d\-~～–%@\#])(?!\.[\dA-Za-z])(?![,:：/]\d)"
+"""A form may end here: no digit, hyphen, tilde, en-dash, `%`, `@` or `#`
+directly after it (`7-11`, `10~20`, `a12@x`, a phone's `#123` extension that
+a `code_words` run must leave to the phone), no point with a digit or Latin letter
 after it (`1.2.3`, `a12345.lee@…`, `v2.txt`), and no comma, colon or slash
 with a digit after *that* (`3,4`, `12:00:05`, `1/2`). A point, comma or slash
 followed by anything else ends a sentence, a clause, or a per-unit price
@@ -85,12 +87,14 @@ TOKEN_PATTERN = re.compile(
     | (?P<iso_date>{_STARTS_CLEAN}(?P<iso_y>(?:19|20)\d\d)-(?P<iso_mo>0?[1-9]|1[0-2])-(?P<iso_d>0?[1-9]|[12]\d|3[01]){_ENDS_CLEAN})
     | (?P<phone>
         (?P<phone_num>
-          (?<![\d+])(?P<phone_plus>\+)(?:\d{{1,3}}[-\ ]\d{{1,4}}(?:[-\ ]\d{{1,4}}){{0,2}}[-\ ]\d{{3,4}}|\d{{8,15}})
-        | [(（]0\d{{1,3}}[)）]\ ?\d{{3,4}}-?\d{{3,4}}
-        | {_STARTS_CLEAN}0\d{{1,3}}(?:(?:[-\ ]\d{{3,4}}){{2}}|[-\ ]\d{{6,8}})
+          (?<![\w+])(?P<phone_plus>\+)
+          (?:\d{{1,3}}(?:[-\ ]?\(\d{{1,4}}\)|[-\ ]\d{{1,4}})(?:[-\ ]\d{{1,4}}){{0,2}}[-\ ]\d{{3,4}}|\d{{8,15}})
+        | [(（]0\d{{1,3}}[)）]\ ?\d{{3,4}}[-\ ]?\d{{3,4}}
+        | {_STARTS_CLEAN}0\d{{1,3}}(?:(?:[-\ ]\d{{3,4}}){{2,3}}|[-\ ]\d{{6,8}})
+        | {_STARTS_CLEAN}0\d{{8,9}}(?=\ ?[\#轉]\ ?\d)
         )
-        (?:\ ?[\#轉](?P<phone_ext>\d{{1,6}}))?
-        (?![\d-])
+        (?:\ ?[\#轉]\ ?(?P<phone_ext>\d{{1,6}}))?
+        (?![\d\-\#轉])(?!\ [\#轉])
       )
     | (?P<currency>{_STARTS_CLEAN}(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>{_AMOUNT})(?P<cur_mult>[千萬万億亿천만억])?(?![千萬万億亿천만억])(?:\ ?元)?{_ENDS_CLEAN})
     | (?P<percent>{_STARTS_CLEAN}(?P<pct_num>{_AMOUNT})\ ?%)
@@ -117,18 +121,23 @@ TOKEN_PATTERN = re.compile(
   id-like `1234-56-78` stays text.
 - `phone` — the number (`phone_num`) in one of three shapes, each settled by
   a mark no quantity carries:
-  - a leading-zero group and either two 3-4 digit groups (`0912-345-678`,
-    `02-2345-6789`, `0800-092-000`) or one 6-8 digit group (`0912-345678`,
-    `02-89798888`); six digits minimum after the lead keeps the dates and
-    ranges `01-05`, `09-12` out;
+  - a leading-zero group and either two or three 3-4 digit groups
+    (`0912-345-678`, `02-2345-6789`, `0800-092-000`, `0123 4567 8901 2345`)
+    or one 6-8 digit group (`0912-345678`, `02-89798888`); six digits
+    minimum after the lead keeps the dates and ranges `01-05`, `09-12` out;
   - a leading-zero area code in half- or full-width parentheses, then the
-    local number (`(02)8979-8888`, `(02) 412-8878`, `（049）2345678`); the
-    parentheses drop out of speech;
+    local number (`(02)8979-8888`, `(02) 412-8878`, `(02) 2345 6789`,
+    `（049）2345678`); the parentheses drop out of speech;
   - a `+` country code (`phone_plus`, spoken) and either two to four more
-    groups ending in 3-4 digits (`+886 912 345 678`, `+886-2-8979-8888`) or
-    8-15 unbroken digits (`+886912345678`); a signed `+5` or `+3 -2` has
-    neither.
-  Then optionally `#` or 轉 and 1-6 digits, the extension (`phone_ext`). A
+    groups ending in 3-4 digits, the first of which may be a parenthesised
+    area code (`+886 912 345 678`, `+886-2-8979-8888`, `+1 (800) 555-1234`),
+    or 8-15 unbroken digits (`+886912345678`); a signed `+5` or `+3 -2` has
+    neither, and a `+` glued to a word (`a+1234`) is not a country code;
+  - a separator-less leading-zero run of 9-10 digits, only when an extension
+    follows (`0912345678#12`); alone it is `bare_int`'s leading-zero code.
+  Then optionally `#` or 轉 and 1-6 digits, spaces allowed around the mark,
+  the extension (`phone_ext`). A longer extension or another hyphen group
+  after the number leaves the whole form written. A
   bare `8979-8888` is not a phone here: without the lead zero, parentheses
   or `+` it is the same string as the year range `1990-2000`, so it stays
   written unless the caller's `code_words` license it. A separator-less

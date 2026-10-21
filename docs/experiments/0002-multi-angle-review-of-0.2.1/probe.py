@@ -48,7 +48,9 @@ CASES = [
     ("comma-decimal-not-scanned", "0.2.2", "zh", "共1,000.5元", "共一千點五元"),
     # --- v0.2.2: phone edges
     ("phone-edges", "0.2.2", "zh", "02-8979-8888#1234567", "02-8979-8888#1234567"),
-    ("phone-edges", "0.2.2", "zh", "0912 345 678 999", "0912 345 678 999"),
+    # Reviewed as "stay written"; 0.2.2 reads a lead-zero run of three groups
+    # after the lead as one digit-group code instead (as `0123 4567 8901 2345`).
+    ("phone-edges", "0.2.2", "zh", "0912 345 678 999", "零九一二三四五六七八九九九"),
     ("phone-edges", "0.2.2", "zh", "(02)8979-8888 轉 123", "零二八九七九八八八八轉一二三"),
     ("phone-edges", "0.2.2", "zh", "(02) 2345 6789", "零二二三四五六七八九"),
     (

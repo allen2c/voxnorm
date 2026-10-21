@@ -131,6 +131,23 @@ def test_phone_shapes(text: str, spoken: str) -> None:
     assert normalize(text) == spoken
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("call +1 (800) 555-1234", "call plus one, eight zero zero, five five five, one two three four"),
+        (
+            "card 0123 4567 8901 2345",
+            "card zero one two three, four five six seven, eight nine zero one, two three four five",
+        ),
+        # A `+` glued to a word is not a country code, and a sign stays written.
+        ("a+12345678", "a+12345678"),
+        ("+3 -2", "+3 -2"),
+    ],
+)
+def test_phone_edges(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
 def test_code_words_keep_hyphen_group_pauses() -> None:
     assert normalize("dial 8979-8888", code_words=["dial"]) == "dial eight nine seven nine, eight eight eight eight"
 
