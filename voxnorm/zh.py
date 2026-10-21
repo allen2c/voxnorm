@@ -43,6 +43,22 @@ zh-CN verbaliser re-spells them)."""
 _MAGNITUDES = frozenset("百千萬万億亿兆")
 """Characters after which a written 2 is a count of that magnitude (兩萬)."""
 
+_MEASURE_WORDS = (
+    *"位個个人間间晚夜張张筆笔份次天週周件杯種种倍歲岁名點点台臺支本隻只條条瓶碗盤盘雙双套箱包片顆颗家輛辆趟碼码項项道組组床塊块元",
+    "小時",
+    "小时",
+    "分鐘",
+    "分钟",
+    "公斤",
+    "公里",
+    "公尺",
+    "公分",
+)
+"""Measure words after which a lone 2 is a count and reads 兩 (兩位, 兩晚,
+兩點). A closed list: a word joins it only with a test. Left out on purpose,
+because 2 before them is an ordinal or a name, or both readings are said:
+號 樓 月 年 分 折 期 級 層."""
+
 
 def verbalize(kind: str, match: re.Match) -> str:
     """Spell the token `match` of class `kind` the way zh-TW says it."""
@@ -162,11 +178,14 @@ def _currency(match: re.Match) -> str:
 
 
 def _bare_int(match: re.Match) -> str:
-    # A lone 2 written before a magnitude character is a count of hundreds,
-    # thousands, ten-thousands: 兩百, 兩千, 兩萬 -- never 二萬. (The Simplified
-    # 万/亿 are here because cn.py speaks through this module.)
-    if match[0] == "2" and match.string[match.end() : match.end() + 1] in _MAGNITUDES:
-        return "兩"
+    # A lone 2 is 兩 where the next characters say it counts something: a
+    # magnitude (兩百, 兩萬 -- never 二萬) or a measure word (兩位, 兩晚). After
+    # 第 it is an ordinal and keeps 二 (第二名). Simplified glyphs are in both
+    # lists because cn.py speaks through this module.
+    if match[0] == "2" and match.string[match.start() - 1 : match.start()] != "第":
+        rest = match.string[match.end() : match.end() + 2]
+        if rest[:1] in _MAGNITUDES or rest.startswith(_MEASURE_WORDS):
+            return "兩"
     return _spoken_int(match[0])
 
 

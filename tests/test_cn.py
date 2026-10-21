@@ -88,6 +88,10 @@ def test_two_before_a_magnitude_reads_liang() -> None:
     assert normalize("2万人", lang="zh-CN") == "两万人"
 
 
+def test_two_before_a_measure_word_reads_liang() -> None:
+    assert normalize("2张票，2个小时", lang="zh-CN") == "两张票，两个小时"
+
+
 def test_currency_multiplier() -> None:
     assert normalize("¥2万", lang="zh-CN") == "两万元"
     assert normalize("¥3.5亿元", lang="zh-CN") == "三点五亿元"

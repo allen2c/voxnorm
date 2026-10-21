@@ -14,8 +14,10 @@ beyond read digit by digit (number_to_zh refuses them). A leading zero or a
 digit string before 號/室 reads digit by digit; two digits before 號 is a
 day of the month and stays grouped. A lone written 2 is 兩 where the text
 itself says it counts something: before a magnitude character (2萬 → 兩萬,
-2千 → 兩千) and as a currency amount ($2 → 兩元). Before a measure word
-(2位, 2晚) it is still 二; that needs a closed word list (planned, 0.3.0).
+2千 → 兩千), before a measure word from the closed `_MEASURE_WORDS` list
+(2位 → 兩位, 2晚 → 兩晚, 2小時 → 兩小時), and as a currency amount ($2 →
+兩元). After 第 it is an ordinal (第二名), and before words left off the
+list (號 樓 月 年 分 折 期 級 層) it stays 二.
 A currency multiplier is spoken before the unit (NT$3.5萬 → 新台幣三點五萬元).
 
 ## cn (Simplified Chinese)

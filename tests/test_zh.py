@@ -485,12 +485,36 @@ def test_structural_lookalikes(text: str, spoken: str) -> None:
         ("2千元", "兩千元"),
         ("2百", "兩百"),
         ("2億", "兩億"),
-        # Elsewhere a lone 2 keeps 二 (before a measure word is planned for 0.3.0).
+        # After 第 it is an ordinal; inside a larger number it is a digit.
         ("第2名", "第二名"),
         ("12萬", "十二萬"),
     ],
 )
 def test_two_before_a_magnitude_reads_liang(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # A lone 2 before a measure word is a count: 兩.
+        ("共2位成人，入住2晚", "共兩位成人，入住兩晚"),
+        ("約2小時", "約兩小時"),
+        ("2個月", "兩個月"),
+        ("2點見", "兩點見"),
+        ("前2名", "前兩名"),
+        ("2倍", "兩倍"),
+        # Ordinals and names keep 二: after 第, and before words left off the list.
+        ("第2位", "第二位"),
+        ("2樓", "二樓"),
+        ("2月", "二月"),
+        ("2號", "二號"),
+        ("2年", "二年"),
+        ("2分", "二分"),
+        ("12位", "十二位"),
+    ],
+)
+def test_two_before_a_measure_word_reads_liang(text: str, spoken: str) -> None:
     assert normalize(text, lang="zh") == spoken
 
 
