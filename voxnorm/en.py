@@ -90,9 +90,18 @@ def _digit_groups(written: str) -> str:
     return ", ".join(digits_to_en(group) for group in re.findall(r"\d+", written))
 
 
+def _spoken_int(digits: str) -> str:
+    """Cardinal reading, unless `digits` is a code: a leading zero or a run past
+    16 digits reads digit by digit (num2words overflows a few hundred digits on,
+    and no one says a seventeen-digit run as a quantity)."""
+    if (len(digits) > 1 and int(digits[0]) == 0) or len(digits) > 16:
+        return digits_to_en(digits)
+    return _cardinal(int(digits))
+
+
 def _amount_to_en(amount: str) -> str:
     integer, _, fraction = amount.replace(",", "").partition(".")
-    spoken = _cardinal(int(integer))
+    spoken = _spoken_int(integer)
     return f"{spoken} point {digits_to_en(fraction)}" if fraction else spoken
 
 
@@ -101,14 +110,6 @@ def _currency(match: re.Match) -> str:
     singular, plural = _CURRENCIES[match["cur_sym"]]
     unit = singular if amount.replace(",", "") == "1" else plural
     return f"{_amount_to_en(amount)} {unit}"
-
-
-def _bare_int(match: re.Match) -> str:
-    run = match[0]
-    # A leading zero is never a quantity -- it is a code, read digit by digit.
-    if len(run) > 1 and int(run[0]) == 0:
-        return digits_to_en(run)
-    return _cardinal(int(run))
 
 
 def _alnum(match: re.Match) -> str:
@@ -135,6 +136,6 @@ _RULES = {
     "code": _code,
     "year": lambda match: match[0],
     "decimal": lambda match: _amount_to_en(match[0]),
-    "comma_int": lambda match: _cardinal(int(match[0].replace(",", ""))),
-    "bare_int": _bare_int,
+    "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),
+    "bare_int": lambda match: _spoken_int(match[0]),
 }

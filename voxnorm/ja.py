@@ -62,8 +62,9 @@ def _iso_date(match: re.Match) -> str:
 
 
 def _spoken_int(digits: str) -> str:
-    # A leading zero is never a quantity -- it is a code, read digit by digit.
-    if len(digits) > 1 and int(digits[0]) == 0:
+    # A leading zero is never a quantity -- it is a code, read digit by digit;
+    # so is a run past 16 digits (num2words' ja overflows at 52).
+    if (len(digits) > 1 and int(digits[0]) == 0) or len(digits) > 16:
         return digits_to_ja(digits)
     return _cardinal(int(digits))
 

@@ -78,7 +78,7 @@ TOKEN_PATTERN = re.compile(
         (?![\d-])
       )
     | (?P<currency>(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>\d[\d,]*(?:\.\d+)?))
-    | (?P<percent>(?<![\d.])(?P<pct_num>\d[\d,]*(?:\.\d+)?)\ ?%)
+    | (?P<percent>(?<![\d.,])(?P<pct_num>\d[\d,]*(?:\.\d+)?)\ ?%)
     | (?P<room_en>(?P<room_word>\b[Rr]oom|\b[Ee]xt\.?|房號|分機)\ ?\#?(?P<room_num>\d{{2,5}})(?!\d))
     | (?P<alnum>(?:(?<=[A-Za-z])|(?<=[*＊●•]{{3}}))\d+(?![{_FORM_CHARS}]))
     | (?P<room_cjk>(?<![{_FORM_CHARS}])\d{{3,10}}(?=號|号|室|호))

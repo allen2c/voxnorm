@@ -83,7 +83,11 @@ def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] =
     Raises:
         ValueError: If `lang` names a language no verbaliser is registered
             for, or `code_words` contains an empty string.
+        TypeError: If `code_words` is a single string -- iterating it would
+            license each of its characters as a word.
     """
+    if isinstance(code_words, str):
+        raise TypeError("code_words must be an iterable of words, not a single str")
     verbalize = _VERBALIZERS[_resolve_lang(text, lang)]
     pattern = pattern_for(tuple(code_words))
     return pattern.sub(lambda match: verbalize(_kind_of(match), match), text)

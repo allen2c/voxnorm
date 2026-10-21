@@ -1,5 +1,7 @@
 """The public surface: language hints, auto-detection, and their precedence."""
 
+import time
+
 import pytest
 
 from voxnorm import normalize
@@ -59,3 +61,28 @@ def test_code_words_accept_any_iterable() -> None:
 def test_empty_code_word_raises() -> None:
     with pytest.raises(ValueError, match="empty string"):
         normalize("4820", code_words=[""])
+
+
+def test_single_string_code_words_raises() -> None:
+    # Iterating "plate" would license p, l, a, t and e one by one.
+    with pytest.raises(TypeError, match="not a single str"):
+        normalize("ab 12", code_words="b")
+
+
+@pytest.mark.parametrize("lang", ["zh", "zh-CN", "en", "ja", "ko"])
+def test_long_digit_run_reads_digit_by_digit(lang: str) -> None:
+    # num2words overflows on long runs (ja at 52 digits, ko at 72); past 16
+    # digits every language reads one digit at a time instead.
+    assert "9" not in normalize("9" * 80, lang=lang)
+
+
+def test_long_digit_run_digits_per_language() -> None:
+    assert normalize("12345678901234567", lang="ja") == "一二三四五六七八九〇一二三四五六七"
+    assert normalize("12345678901234567", lang="ko") == "일이삼사오육칠팔구공일이삼사오육칠"
+
+
+def test_percent_scan_is_linear() -> None:
+    # `percent` once restarted after every comma and rescanned to the end.
+    started = time.perf_counter()
+    normalize("1," * 10_000)
+    assert time.perf_counter() - started < 0.5

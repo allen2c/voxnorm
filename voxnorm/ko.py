@@ -69,8 +69,9 @@ def _iso_date(match: re.Match) -> str:
 
 
 def _spoken_int(digits: str) -> str:
-    # A leading zero is never a quantity -- it is a code, read digit by digit.
-    if len(digits) > 1 and int(digits[0]) == 0:
+    # A leading zero is never a quantity -- it is a code, read digit by digit;
+    # so is a run past 16 digits (num2words' ko overflows at 72).
+    if (len(digits) > 1 and int(digits[0]) == 0) or len(digits) > 16:
         return digits_to_ko(digits)
     return _sino(int(digits))
 
