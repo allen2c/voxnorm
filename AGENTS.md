@@ -47,3 +47,5 @@ uv run ruff check . && uv run ruff format --check .
 | [adding-a-language.md](docs/adding-a-language.md) | A new verbaliser module and one registry entry |
 | [testing.md](docs/testing.md) | Running and writing tests |
 | [release.md](docs/release.md) | Cutting a release to PyPI |
+| [roadmap.md](docs/roadmap.md) | Picking up planned work: each item, its evidence, and how it is checked |
+| [experiments/](docs/experiments/README.md) | Running or citing a probe, review, or measurement; record every new one there |
