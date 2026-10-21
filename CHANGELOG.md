@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.3.0 — 2026-10-21
+
+New structural forms from the 0.2.1 review
+(`docs/experiments/0002-multi-angle-review-of-0.2.1`), each read in all five
+languages, plus one reading decision.
+
+- New kinds `time_range` and `time_12h`: `8:00-17:00` → 八點到十七點 / eight
+  o'clock to seventeen hundred / 八時から十七時まで / 여덟 시부터 …까지;
+  `9:30pm`, `10 a.m.`, `10:00 AM` → 下午九點半, nine thirty p m, 午後, 오후.
+  12am is 凌晨, 12pm 中午.
+- Slash dates with a four-digit 19xx/20xx year (`2026/10/16`) read as
+  `iso_date`; `10/16` and the ROC `115/10/16` stay written.
+- New kind `temperature`: `25°C`, `25 °F`, `25℃`, `-5°C` → 攝氏零下五度 /
+  minus five degrees Celsius. In `3-5°C` the hyphen is a range, so it stays
+  written; a bare `25°` is left alone.
+- New kind `unit`: kg, km, cm, mm, mg, ml, m², ㎡ and km/h after a number
+  (`60km/h` → 時速六十公里 / 时速六十公里 / sixty kilometers per hour).
+  zh-CN says 厘米/毫米/平方米. Bare m, g, K, G and compound units
+  (`5kg/m²`) are not read as units.
+- Phones: North American `800-555-1234`, `1-800-123-4567` and
+  `(800) 555-1234` read as digit groups; 3-2-4, 3-3-3 and 1xx-area shapes
+  stay written.
+- Room words take a connective (`房號是1203`, `分機：123`, `Room: 302`) and
+  keep it as written; 房号/分机 are room words too. A CJK room word no
+  longer gains a space before its digits (`房號1203` → 房號一二零三).
+- zh/zh-CN: a lone 2 before a measure word from a closed list reads 兩
+  (2位, 2晚, 2個, 2小時, 2張), never after 第 and never before 號 樓 月 年
+  分 折 期 級 層; 2 of a unit is 兩公斤.
+- en: `9:30am` now reads "nine thirty a m" (was "nine thirty am").
+
 ## 0.2.2 — 2026-10-21
 
 Correctness only, from the four-angle review

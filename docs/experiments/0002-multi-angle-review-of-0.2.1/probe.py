@@ -75,7 +75,8 @@ CASES = [
     ),
     ("url-and-path-mangled", "0.2.2", "en", "file_v2_12.txt", "file_v2_12.txt"),
     # --- v0.2.2: English spacing and readings
-    ("en-words-glued-to-letters", "0.2.2", "en", "open 9:30am", "open nine thirty am"),
+    # 0.3.0 reads the am as a twelve-hour mark (am-pm-time); 0.2.2 gave "nine thirty am".
+    ("en-words-glued-to-letters", "0.2.2", "en", "open 9:30am", "open nine thirty a m"),
     ("en-words-glued-to-letters", "0.2.2", "en", "plate4820", "plate four eight two zero"),
     ("en-ordinal-suffix", "0.2.2", "en", "the 1st and 21st", "the first and twenty-first"),
     ("en-24-hour-oclock", "0.2.2", "en", "at 13:00", "at thirteen hundred"),

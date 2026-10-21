@@ -104,7 +104,7 @@ currency symbols joined the guards to keep `normalize` idempotent).
 
 Release per [release.md](release.md); add `results-v0.2.2.txt` to 0002.
 
-## v0.3.0 — new structural forms
+## v0.3.0 — new structural forms (shipped)
 
 Each is a new or widened scanner kind with readings in all five languages
 (a language that cannot speak it honestly returns it unchanged).

@@ -33,9 +33,11 @@ alone:
 Two layers, split where languages stop sharing:
 
 - **Detection is language-neutral** (`voxnorm/tokens.py`): one scanner finds
-  the spans — times, ISO dates, phone numbers (with area codes in
-  parentheses, `+` country codes and `#`/轉 extensions), currency,
-  percentages, room numbers, letter-glued identifiers and masked tails,
+  the spans — times, time ranges and am/pm times, ISO and four-digit-year
+  slash dates, phone numbers (with area codes in parentheses, `+` country
+  codes, `#`/轉 extensions and North American 3-3-4 numbers), currency,
+  percentages, temperatures, metric units, room numbers, letter-glued
+  identifiers and masked tails,
   decimals, integers — and names their kind. Angle-bracket markup
   (`<break time="500ms"/>`) passes through untouched.
 - **Verbalisation is per-language** (`voxnorm/zh.py`, `cn.py`, `en.py`,
@@ -59,9 +61,10 @@ and lands on the Chinese reading — pass `lang="ja"` when you know better.)
 
 The charter is **structural only, never guess**: a form whose reading is
 ambiguous does not convert (`1/2` the fraction and `8/17` the date are the
-same slash string, so no slash form converts at all; `7-11` the shop and
-`3-5天` the range are the same hyphen string, so no hyphen form does either,
-unless its shape is an ISO date or a phone number).
+same slash string, so a slash form converts only with a four-digit year in
+front, `2026/10/16`; `7-11` the shop and `3-5天` the range are the same
+hyphen string, so no hyphen form does either, unless its shape is an ISO
+date, a clock-time range or a phone number).
 What is not converted is simply spoken as written — which is where it started.
 
 ## Codes the text does not mark

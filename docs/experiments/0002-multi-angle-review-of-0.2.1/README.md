@@ -1,6 +1,6 @@
 # 0002-multi-angle-review-of-0.2.1
 
-**Date**: 2026-10-21 · **Against**: voxnorm 0.2.1 (22f29f1) · **Status**: decided, planned in [roadmap](../../roadmap.md) for 0.2.2 and 0.3.0
+**Date**: 2026-10-21 · **Against**: voxnorm 0.2.1 (22f29f1) · **Status**: decided, shipped in 0.2.2 and 0.3.0 per the [roadmap](../../roadmap.md)
 
 ## Question
 
@@ -24,9 +24,12 @@ re-checked by hand. The cases are consolidated, path-free, in
 [`probe.py`](probe.py), each tagged with its planned release;
 [`results-v0.2.1.txt`](results-v0.2.1.txt) is its output on 0.2.1
 (4 pass, 67 pending); [`results-v0.2.2.txt`](results-v0.2.2.txt) on 0.2.2
-(58 pass, 0 fail, 13 pending — every pending case is a 0.3.0 item). One
-case changed plan during 0.2.2: `0912 345 678 999` was reviewed as "stay
-written" and now reads as one digit-group phone. Re-run it after each
+(58 pass, 0 fail, 13 pending — every pending case is a 0.3.0 item);
+[`results-v0.3.0.txt`](results-v0.3.0.txt) on 0.3.0 (70 pass, 0 fail,
+0 pending). Two cases changed plan: `0912 345 678 999` was reviewed as
+"stay written" and since 0.2.2 reads as one digit-group phone, and
+`9:30am`, "nine thirty am" in 0.2.2, is "nine thirty a m" since 0.3.0
+reads the mark as a twelve-hour time. Re-run it after each
 release.
 
 ## Method
