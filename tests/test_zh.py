@@ -455,5 +455,27 @@ def test_currency_unit_and_multiplier(text: str, spoken: str) -> None:
     assert normalize(text, lang="zh") == spoken
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # Multiplication and dimensions stay written on both sides of the x.
+        ("解析度1920x1080", "解析度1920x1080"),
+        # Markdown emphasis is not a mask, however many stars.
+        ("***12***", "***十二***"),
+        # URLs and emails pass whole; the text around them converts.
+        ("詳見 https://x.com/a/2?id=5&p=10 共3頁", "詳見 https://x.com/a/2?id=5&p=10 共三頁"),
+        ("寄到 a12@b.com，共3份", "寄到 a12@b.com，共三份"),
+        ("檔名file_v2_12.txt", "檔名file_v2_12.txt"),
+        # A tag needs a name and quoted attributes; comparisons stay text.
+        ("若1<x且5>2", "若一<x且五>二"),
+        ("<!-- 12 -->共3件", "<!-- 12 -->共三件"),
+        # A year speaks only before its own script's suffix.
+        ("2026년", "2026년"),
+    ],
+)
+def test_structural_lookalikes(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
 def test_amount_keeps_the_comma_after_it() -> None:
     assert normalize("$5, $6", lang="zh") == "五元, 六元"

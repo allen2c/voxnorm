@@ -86,6 +86,7 @@ def _phone(match: re.Match) -> str:
 
 _RULES = {
     "markup": lambda match: match[0],
+    "url_or_email": lambda match: match[0],
     "time": _time,
     "iso_date": _iso_date,
     "phone": _phone,
@@ -97,7 +98,8 @@ _RULES = {
     "room_cjk": lambda match: digits_to_ja(match[0]),
     "alnum": lambda match: digits_to_ja(match[0]),
     "code": lambda match: f"{match['code_pre'] or ''}{digits_to_ja(match['code_num'])}",
-    "year": lambda match: _cardinal(int(match[0])),
+    # A year speaks only before its own script's 年; before Korean 년 it stays written.
+    "year": lambda match: _cardinal(int(match[0])) if match.string[match.end()] == "年" else match[0],
     "decimal": lambda match: _amount_to_ja(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),
     "bare_int": lambda match: _spoken_int(match[0]),

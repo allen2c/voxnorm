@@ -38,6 +38,7 @@ from functools import lru_cache
 
 TOKEN_KINDS = (
     "markup",
+    "url_or_email",
     "code",
     "time",
     "iso_date",
@@ -54,24 +55,25 @@ TOKEN_KINDS = (
 )
 """Every token kind a verbaliser must speak, in the scanner's priority order.
 `code` exists only in a `pattern_for(code_words)` pattern; the rest are the
-top-level groups of `TOKEN_PATTERN`. `markup` is matched only so that it is
-left alone: every verbaliser returns it unchanged."""
+top-level groups of `TOKEN_PATTERN`. `markup` and `url_or_email` are matched only so
+that they are left alone: every verbaliser returns them unchanged."""
 
-_STARTS_CLEAN = r"(?<![\d\-+/.$€¥£₩\#])(?<!\d[,:：~～–])"
-"""A form may start here: no digit, sign, slash, point, currency symbol or
-`#` directly before it (`-5`, `+5`, `1/2`, `.5`, `1.2`, the `5` of a
+_STARTS_CLEAN = r"(?<![\d\-+/.$€¥£₩\#_=])(?<!\d[,:：~～–xX×])"
+"""A form may start here: no digit, sign, slash, point, currency symbol, `#`,
+`_` or `=` directly before it (`-5`, `+5`, `1/2`, `.5`, `1.2`, the `5` of a
 `-$5` the currency form refused, the `#1234567` a phone refused as its
-extension), and no comma, colon, tilde or en-dash
-with a digit before *that* (`3,4`, `3:2`, `10~20`). A separator after a word
-is punctuation, not part of a form: `金額：1,200`, `3, 4`, `元～2,000` start
-clean."""
+extension, `v2_12`, `x=5`), and no comma, colon, tilde, en-dash or
+multiplication `x` with a digit before *that* (`3,4`, `3:2`, `10~20`,
+`1920x1080`). A separator after a word is punctuation, not part of a form:
+`金額：1,200`, `3, 4`, `元～2,000` start clean."""
 
-_ENDS_CLEAN = r"(?![\d\-~～–%@\#])(?!\.[\dA-Za-z])(?![,:：/]\d)"
-"""A form may end here: no digit, hyphen, tilde, en-dash, `%`, `@` or `#`
+_ENDS_CLEAN = r"(?![\d\-~～–%@\#_])(?!\.[\dA-Za-z])(?![,:：/xX×]\d)"
+"""A form may end here: no digit, hyphen, tilde, en-dash, `%`, `@`, `#` or `_`
 directly after it (`7-11`, `10~20`, `a12@x`, a phone's `#123` extension that
-a `code_words` run must leave to the phone), no point with a digit or Latin letter
-after it (`1.2.3`, `a12345.lee@…`, `v2.txt`), and no comma, colon or slash
-with a digit after *that* (`3,4`, `12:00:05`, `1/2`). A point, comma or slash
+a `code_words` run must leave to the phone, `v2_12`), no point with a digit
+or Latin letter after it (`1.2.3`, `a12345.lee@…`, `v2.txt`), and no comma,
+colon, slash or multiplication `x` with a digit after *that* (`3,4`,
+`12:00:05`, `1/2`, `1920x1080`). A point, comma or slash
 followed by anything else ends a sentence, a clause, or a per-unit price
 (`5.`, `12, 謝謝`, `NT$500/人`)."""
 
@@ -82,7 +84,15 @@ European decimal or a list, so the amount stops before it."""
 
 TOKEN_PATTERN = re.compile(
     rf"""
-      (?P<markup><[A-Za-z/!][^<>]*>)
+      (?P<markup>
+        <[A-Za-z][\w:.-]*(?:\s+[\w:.-]+\s*=\s*(?:"[^"<>]*"|'[^'<>]*'))*\s*/?>
+      | </[A-Za-z][\w:.-]*\s*>
+      | <!--.*?-->
+      )
+    | (?P<url_or_email>
+        (?:https?://|www\.)[A-Za-z0-9\-._~:/?\#\[\]@!$&'()*+,;=%]+
+      | [A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)+
+      )
     | (?P<time>{_STARTS_CLEAN}(?P<time_h>[01]?\d|2[0-3]):(?P<time_m>[0-5]\d){_ENDS_CLEAN})
     | (?P<iso_date>{_STARTS_CLEAN}(?P<iso_y>(?:19|20)\d\d)-(?P<iso_mo>0?[1-9]|1[0-2])-(?P<iso_d>0?[1-9]|[12]\d|3[01]){_ENDS_CLEAN})
     | (?P<phone>
@@ -99,7 +109,7 @@ TOKEN_PATTERN = re.compile(
     | (?P<currency>{_STARTS_CLEAN}(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>{_AMOUNT})(?P<cur_mult>[千萬万億亿천만억])?(?![千萬万億亿천만억])(?:\ ?元)?{_ENDS_CLEAN})
     | (?P<percent>{_STARTS_CLEAN}(?P<pct_num>{_AMOUNT})\ ?%)
     | (?P<room_en>(?P<room_word>\b[Rr]oom|\b[Ee]xt\.?|房號|分機)\ ?\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
-    | (?P<alnum>(?:(?<=[A-Za-z])|(?<=[*＊●•]{{3}}))\d+{_ENDS_CLEAN})
+    | (?P<alnum>(?:(?<=[A-Za-z])(?<!\d[xX])|(?<=[*＊●•]{{3}})(?=\d+(?![\d*＊])))\d+{_ENDS_CLEAN})
     | (?P<room_cjk>{_STARTS_CLEAN}\d{{3,10}}(?=號|号|室|호))
     | (?P<year>{_STARTS_CLEAN}(?:19|20)\d\d(?=年|년))
     | (?P<decimal>{_STARTS_CLEAN}(?:[1-9]\d{{0,2}}(?:,\d{{3}})+|\d+)\.\d+{_ENDS_CLEAN})
@@ -110,11 +120,15 @@ TOKEN_PATTERN = re.compile(
 )
 """Notes per alternative, in order:
 
-- `markup` — an angle-bracket tag (`<break time="500ms"/>`, `</emphasis>`)
-  is SSML or similar markup bound for the synthesizer, never text. It is
-  matched first and every verbaliser returns it unchanged, so a digit inside
-  an attribute is never rewritten; text between tags converts as usual. A
-  `<` opens a tag only before a letter, `/` or `!`, so `x<5` stays text.
+- `markup` — an angle-bracket tag (`<break time="500ms"/>`, `</emphasis>`,
+  `<!-- … -->`) is SSML or similar markup bound for the synthesizer, never
+  text. It is matched first and every verbaliser returns it unchanged, so a
+  digit inside an attribute is never rewritten; text between tags converts
+  as usual. A tag is a name and quoted `name="value"` attributes only, so
+  `x<5` and `1<x and 5>2` stay text.
+- `url_or_email` — a URL (`https://…`, `www.…`) or an email address,
+  returned unchanged: its digits are path, query and host parts
+  (`?id=5&p=10`, `a12345.lee@…`), not quantities.
 - `time` — `HH:MM`, 24-hour, minutes always two digits; the trailing guard
   keeps `12:00:05` (a duration with seconds, unhandled) from half-matching.
 - `iso_date` — `YYYY-MM-DD` with a plausibility window on every field, so an
@@ -158,14 +172,18 @@ TOKEN_PATTERN = re.compile(
 - `alnum` — a digit run glued to a Latin letter on its left (`A123456789`,
   `AB1234567`, `H1N1`) is an identifier, never a quantity, and reads digit by
   digit. So is the tail after three or more mask characters (`****1234`,
-  `●●●●5678`): masked digits make the rest a code. Three, because `**12**`
-  is Markdown bold around a quantity. Only the letter *before* licenses this: a letter after the digits
+  `●●●●5678`): masked digits make the rest a code. Three, and never with a
+  star after the digits, because `**12**` and `***12***` are Markdown
+  emphasis around a quantity. An `x` between digits is a multiplication or
+  a dimension (`1920x1080`, `0x1F`), not a letter: both sides stay written. Only the letter *before* licenses this: a letter after the digits
   is a unit or an ordinal suffix (`100km`, `4K`, `10th`), still a quantity.
   Sits after `currency` so `USD100` keeps its currency reading (alternation
   order decides at the `U`, which the scanner reaches first).
 - `year` — four digits directly before 年/년 read as a year (二零二六年
   digit by digit in Chinese, 二千二十六年 / 이천이십육년 as cardinals in
-  Japanese and Korean — the split lives in the verbalisers); without the
+  Japanese and Korean — the split lives in the verbalisers, and each speaks
+  only before its own script's suffix, leaving `2026年` written under a
+  forced `lang="ko"`); without the
   suffix a four-digit integer is a quantity. Neither `year` nor `room_cjk`
   starts inside a form (`_STARTS_CLEAN`), so the range `1990-2000年` and the room
   `B1-302室` stay whole rather than converting their last group.

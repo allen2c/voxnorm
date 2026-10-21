@@ -80,6 +80,14 @@ def test_code_words() -> None:
     assert normalize("会員番号1234です", code_words=["会員番号"]) == "会員番号一二三四です"
 
 
+def test_year_before_hangul_suffix_stays_written() -> None:
+    assert normalize("2026년", lang="ja") == "2026년"
+
+
+def test_url_and_markup_pass_through() -> None:
+    assert normalize('<break time="500ms"/> www.x.com/2 12', lang="ja") == '<break time="500ms"/> www.x.com/2 十二'
+
+
 def test_currency_multiplier() -> None:
     assert normalize("¥3.5万", lang="ja") == "三点五万円"
 

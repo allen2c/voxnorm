@@ -138,6 +138,7 @@ def _alnum(match: re.Match) -> str:
 
 _RULES = {
     "markup": lambda match: match[0],
+    "url_or_email": lambda match: match[0],
     "time": _time,
     "iso_date": _iso_date,
     "phone": _phone,

@@ -106,6 +106,7 @@ def _digit_groups(written: str) -> str:
 
 _RULES = {
     "markup": lambda match: match[0],
+    "url_or_email": lambda match: match[0],
     "time": _time,
     "iso_date": _iso_date,
     "phone": _phone,
@@ -117,7 +118,9 @@ _RULES = {
     "room_cjk": lambda match: digits_to_ko(match[0]),
     "alnum": lambda match: digits_to_ko(match[0]),
     "code": _code,
-    "year": lambda match: _sino(int(match[0])),
+    # A year speaks only before its own script's 년; glued to a Han 年 it would
+    # read 이천이십육年, so it stays written.
+    "year": lambda match: _sino(int(match[0])) if match.string[match.end()] == "년" else match[0],
     "decimal": lambda match: _amount_to_ko(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),
     "bare_int": lambda match: _spoken_int(match[0]),

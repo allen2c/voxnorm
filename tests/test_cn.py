@@ -77,6 +77,13 @@ def test_code_words() -> None:
     assert normalize("车牌4820", code_words=["车牌"]) == "车牌四八二零"
 
 
+def test_url_and_markup_pass_through() -> None:
+    assert (
+        normalize('<break time="500ms"/> www.x.com/2 共12件', lang="zh-CN")
+        == '<break time="500ms"/> www.x.com/2 共十二件'
+    )
+
+
 def test_currency_multiplier() -> None:
     assert normalize("¥2万", lang="zh-CN") == "两万元"
     assert normalize("¥3.5亿元", lang="zh-CN") == "三点五亿元"

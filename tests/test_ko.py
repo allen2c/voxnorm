@@ -77,6 +77,14 @@ def test_code_words() -> None:
     assert normalize("계좌 1234 입니다", code_words=["계좌"]) == "계좌 일이삼사 입니다"
 
 
+def test_year_before_han_suffix_stays_written() -> None:
+    assert normalize("2026年", lang="ko") == "2026年"
+
+
+def test_url_and_markup_pass_through() -> None:
+    assert normalize('<break time="500ms"/> www.x.com/2 12', lang="ko") == '<break time="500ms"/> www.x.com/2 십이'
+
+
 def test_currency_multiplier() -> None:
     assert normalize("₩3만", lang="ko") == "삼만 원"
 
