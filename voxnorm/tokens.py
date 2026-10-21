@@ -116,6 +116,8 @@ TOKEN_PATTERN = re.compile(
           (?<![\w+])(?P<phone_plus>\+)
           (?:\d{{1,3}}(?:[-\ ]?\(\d{{1,4}}\)|[-\ ]\d{{1,4}})(?:[-\ ]\d{{1,4}}){{0,2}}[-\ ]\d{{3,4}}|\d{{8,15}})
         | [(（]0\d{{1,3}}[)）]\ ?\d{{3,4}}[-\ ]?\d{{3,4}}
+        | {_STARTS_CLEAN}(?:1-)?[2-9]\d\d-\d{{3}}-\d{{4}}
+        | [(（][2-9]\d\d[)）]\ ?\d{{3}}-\d{{4}}
         | {_STARTS_CLEAN}0\d{{1,3}}(?:(?:[-\ ]\d{{3,4}}){{2,3}}|[-\ ]\d{{6,8}})
         | {_STARTS_CLEAN}0\d{{8,9}}(?=\ ?[\#轉]\ ?\d)
         )
@@ -130,7 +132,7 @@ TOKEN_PATTERN = re.compile(
       )
     | (?P<unit>{_STARTS_CLEAN}(?P<unit_num>{_AMOUNT})\ ?(?P<unit_sym>km/h|kg|km|cm|mm|mg|ml|mL|m²|㎡)(?![\w²/]))
     | (?P<ordinal>(?<![A-Za-z]){_STARTS_CLEAN}(?P<ord_num>\d{{1,6}})(?P<ord_suffix>st|nd|rd|th|ST|ND|RD|TH)(?![A-Za-z\d]))
-    | (?P<room_en>(?P<room_word>(?<![A-Za-z])(?:[Rr]oom|[Ee]xt\.?)|房號|分機)\ ?\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
+    | (?P<room_en>(?P<room_word>(?<![A-Za-z])(?:[Rr]oom|[Ee]xt\.?)|房號|房号|分機|分机)(?P<room_link>\ ?(?:[是為为:：]\ ?)?)\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
     | (?P<alnum>(?:(?<=[A-Za-z])(?<!\d[xX])|(?<=[*＊●•]{{3}})(?=\d+(?![\d*＊])))\d+{_ENDS_CLEAN})
     | (?P<room_cjk>{_STARTS_CLEAN}\d{{3,10}}(?=號|号|室|호))
     | (?P<year>{_STARTS_CLEAN}(?:19|20)\d\d(?=年|년))
@@ -167,7 +169,7 @@ TOKEN_PATTERN = re.compile(
   slash form convert: no fraction has three fields, while `10/16` (a date
   or a fraction) and `115/10/16` (a ROC date whose 民國 is implied) stay
   written.
-- `phone` — the number (`phone_num`) in one of three shapes, each settled by
+- `phone` — the number (`phone_num`) in one of these shapes, each settled by
   a mark no quantity carries:
   - a leading-zero group and either two or three 3-4 digit groups
     (`0912-345-678`, `02-2345-6789`, `0800-092-000`, `0123 4567 8901 2345`)
@@ -181,6 +183,11 @@ TOKEN_PATTERN = re.compile(
     area code (`+886 912 345 678`, `+886-2-8979-8888`, `+1 (800) 555-1234`),
     or 8-15 unbroken digits (`+886912345678`); a signed `+5` or `+3 -2` has
     neither, and a `+` glued to a word (`a+1234`) is not a country code;
+  - a North American number: a 2-9 area code, then 3 and 4 digits, joined
+    by hyphens with an optional `1-` in front (`800-555-1234`,
+    `1-800-123-4567`), or after a parenthesised area code
+    (`(800) 555-1234`); hyphens only, since a space-separated `800 555 1234`
+    is as likely a list, and a 3-2-4 or 3-3-3 shape stays written;
   - a separator-less leading-zero run of 9-10 digits, only when an extension
     follows (`0912345678#12`); alone it is `bare_int`'s leading-zero code.
   Then optionally `#` or 轉 and 1-6 digits, spaces allowed around the mark,
@@ -216,7 +223,9 @@ TOKEN_PATTERN = re.compile(
   explicit context word. The CJK suffix (Traditional 號, Japanese 号/室,
   Korean 호) stays outside the match (lookahead) so `302號房` keeps its 號房;
   the en prefix is inside and re-emitted, because a variable-width lookbehind
-  is not a thing `re` has.
+  is not a thing `re` has. A connective between word and number
+  (`room_link`: 是, 為/为, a colon) is part of the prefix (`房號是1203`,
+  `分機：123`, `Room: 302`) and is re-emitted as written.
 - `alnum` — a digit run glued to a Latin letter on its left (`A123456789`,
   `AB1234567`, `H1N1`) is an identifier, never a quantity, and reads digit by
   digit. So is the tail after three or more mask characters (`****1234`,

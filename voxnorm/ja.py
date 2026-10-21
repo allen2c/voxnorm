@@ -105,6 +105,12 @@ def _phone(match: re.Match) -> str:
     return f"{spoken}内線{digits_to_ja(match['phone_ext'])}" if match["phone_ext"] else spoken
 
 
+def _room(match: re.Match) -> str:
+    # The written link stays; only a Latin word glued to its number gets a space.
+    link = match["room_link"] or (" " if match["room_word"].isascii() else "")
+    return f"{match['room_word']}{link}{digits_to_ja(match['room_num'])}"
+
+
 _RULES = {
     "markup": lambda match: match[0],
     "url_or_email": lambda match: match[0],
@@ -124,7 +130,7 @@ _RULES = {
         + f"{_amount_to_ja(match['temp_num'])}度"
     ),
     "unit": lambda match: _UNIT_READINGS[match["unit_sym"]].format(_amount_to_ja(match["unit_num"])),
-    "room_en": lambda match: f"{match['room_word']} {digits_to_ja(match['room_num'])}",
+    "room_en": _room,
     "room_cjk": lambda match: digits_to_ja(match[0]),
     "alnum": lambda match: digits_to_ja(match[0]),
     "code": lambda match: f"{match['code_pre'] or ''}{digits_to_ja(match['code_num'])}",

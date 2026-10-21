@@ -108,6 +108,7 @@ def test_currency_multiplier() -> None:
 def test_phone_shapes() -> None:
     assert normalize("(02)1234-5678#12", lang="ko") == "공이 일이삼사 오육칠팔 내선 일이"
     assert normalize("+82-2-1234-5678", lang="ko") == "플러스 팔이 이 일이삼사 오육칠팔"
+    assert normalize("(800) 555-1234", lang="ko") == "팔공공 오오오 일이삼사"
 
 
 def test_code_words_keep_hyphen_group_pauses() -> None:

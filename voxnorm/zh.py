@@ -224,6 +224,13 @@ def _phone(match: re.Match) -> str:
     return f"{spoken}轉{digits_to_zh(match['phone_ext'])}" if match["phone_ext"] else spoken
 
 
+def _room(match: re.Match) -> str:
+    # The written link (房號是, 分機：) stays; only a Latin word glued to its
+    # number gets a space (`Room302` -> Room 三零二).
+    link = match["room_link"] or (" " if match["room_word"].isascii() else "")
+    return f"{match['room_word']}{link}{digits_to_zh(match['room_num'])}"
+
+
 _RULES = {
     "markup": lambda match: match[0],
     "url_or_email": lambda match: match[0],
@@ -237,7 +244,7 @@ _RULES = {
     "percent": lambda match: f"百分之{amount_to_zh(match['pct_num'])}",
     "temperature": _temperature,
     "unit": lambda match: UNIT_READINGS[match["unit_sym"]].format(count_to_zh(match["unit_num"])),
-    "room_en": lambda match: f"{match['room_word']} {digits_to_zh(match['room_num'])}",
+    "room_en": _room,
     "room_cjk": lambda match: digits_to_zh(match[0]),
     "alnum": lambda match: digits_to_zh(match[0]),
     "code": lambda match: f"{match['code_pre'] or ''}{digits_to_zh(match['code_num'])}",

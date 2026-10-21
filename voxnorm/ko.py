@@ -145,7 +145,7 @@ _RULES = {
         + f"{_amount_to_ko(match['temp_num'])} 도"
     ),
     "unit": lambda match: _UNIT_READINGS[match["unit_sym"]].format(_amount_to_ko(match["unit_num"])),
-    "room_en": lambda match: f"{match['room_word']} {digits_to_ko(match['room_num'])}",
+    "room_en": lambda match: f"{match['room_word']}{match['room_link'] or ' '}{digits_to_ko(match['room_num'])}",
     "room_cjk": lambda match: digits_to_ko(match[0]),
     "alnum": lambda match: digits_to_ko(match[0]),
     "code": _code,

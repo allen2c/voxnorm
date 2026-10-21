@@ -251,6 +251,26 @@ def test_dates_temperatures_and_units(text: str, spoken: str) -> None:
     assert normalize(text) == spoken
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("call 800-555-1234", "call eight zero zero, five five five, one two three four"),
+        ("call (800) 555-1234", "call eight zero zero, five five five, one two three four"),
+        ("call 1-800-123-4567", "call one, eight zero zero, one two three, four five six seven"),
+        ("Room: 302", "Room: three zero two"),
+    ],
+)
+def test_us_phones_and_room_connective(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+# A social security number, a short or 1xx-area shape, or an extra group is not
+# a North American phone.
+@pytest.mark.parametrize("text", ["123-45-6789", "800-555-123", "100-555-1234", "800-555-1234-5", "2-800-555-1234"])
+def test_us_phone_lookalikes_stay_written(text: str) -> None:
+    assert normalize(text) == text
+
+
 def test_cardinals_carry_no_comma_pause() -> None:
     assert normalize("1100") == "one thousand one hundred"
 

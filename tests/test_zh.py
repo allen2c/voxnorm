@@ -534,6 +534,21 @@ def test_dates_temperatures_and_units(text: str, spoken: str) -> None:
     assert normalize(text, lang="zh") == spoken
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # A connective between the room word and its number keeps the digit reading.
+        ("房號是1203", "房號是一二零三"),
+        ("房號：1203", "房號：一二零三"),
+        ("分機為123", "分機為一二三"),
+        ("房號1203", "房號一二零三"),
+        ("撥打800-555-1234", "撥打八零零五五五一二三四"),
+    ],
+)
+def test_room_connective_and_us_phone(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
 @pytest.mark.parametrize("text", ["10/16", "115/10/16", "2026/10-16", "3-5°C"])
 def test_date_and_temperature_lookalikes_stay_written(text: str) -> None:
     assert normalize(text, lang="zh") == text

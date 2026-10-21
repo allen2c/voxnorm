@@ -105,3 +105,4 @@ def test_currency_multiplier() -> None:
 def test_phone_shapes() -> None:
     assert normalize("(03)1234-5678#12", lang="ja") == "〇三一二三四五六七八内線一二"
     assert normalize("+81-3-1234-5678", lang="ja") == "プラス八一三一二三四五六七八"
+    assert normalize("1-800-123-4567", lang="ja") == "一八〇〇一二三四五六七"

@@ -241,7 +241,7 @@ _RULES = {
     "percent": lambda match: f"{_amount_to_en(match['pct_num'])} percent",
     "temperature": _temperature,
     "unit": _unit,
-    "room_en": lambda match: f"{match['room_word']} {digits_to_en(match['room_num'])}",
+    "room_en": lambda match: f"{match['room_word']}{match['room_link'].rstrip()} {digits_to_en(match['room_num'])}",
     # The zh-anchored kinds (a digit run in front of 號/室/年) stay written
     # under a forced `lang="en"`: converting the digits while the CJK anchor
     # character stays behind glues English number words onto raw 年/室
