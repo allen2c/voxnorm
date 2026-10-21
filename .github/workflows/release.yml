@@ -14,6 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - name: Tag matches the package version
+        run: |
+          version=$(uv run python -c "import voxnorm; print(voxnorm.__version__)")
+          test "${GITHUB_REF_NAME#v}" = "$version" || { echo "tag $GITHUB_REF_NAME != $version"; exit 1; }
+      - run: uv run pytest -q
       - run: uv build
       - uses: actions/upload-artifact@v4
         with:

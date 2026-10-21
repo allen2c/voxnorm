@@ -23,7 +23,11 @@ Every finding below was reproduced by its reviewer and the important ones
 re-checked by hand. The cases are consolidated, path-free, in
 [`probe.py`](probe.py), each tagged with its planned release;
 [`results-v0.2.1.txt`](results-v0.2.1.txt) is its output on 0.2.1
-(4 pass, 67 pending). Re-run it after each release.
+(4 pass, 67 pending); [`results-v0.2.2.txt`](results-v0.2.2.txt) on 0.2.2
+(58 pass, 0 fail, 13 pending — every pending case is a 0.3.0 item). One
+case changed plan during 0.2.2: `0912 345 678 999` was reviewed as "stay
+written" and now reads as one digit-group phone. Re-run it after each
+release.
 
 ## Method
 
@@ -130,6 +134,11 @@ The split, approved 2026-10-21:
   forms.
 - **0.3.0** — the new forms, and the readings that need a closed word list
   (`zh-liang-before-measure-word`, `ko-native-counters`).
+
+Residual found while fixing (0.2.2): a compound currency amount
+(`NT$1萬2千`, `NT$7萬0`) is not read, and is not idempotent, because the
+digits after the first multiplier convert on their own once the symbol's
+part stays written. Rare in practice; recorded in `tokens.py`.
 
 Open decisions, to settle before 0.3.0 (listed in the roadmap):
 `year-as-duration`, `room-shi-as-count`, `ko-room-reading`, the measure-word

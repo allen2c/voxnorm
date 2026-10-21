@@ -4,10 +4,11 @@ Two layers, split where languages stop sharing.
 
 ## Scanner (`voxnorm/tokens.py`)
 
-One compiled pattern, `TOKEN_PATTERN`, an alternation of named groups — clock
-times, ISO dates, phone numbers, currency, percentages, room/extension codes,
-years before 年/년, decimals, comma-grouped and bare integers. Each top-level
-group name is a token *kind*; the part groups inside it (`time_h`, `cur_amt`,
+One compiled pattern, `TOKEN_PATTERN`, an alternation of named groups, one per
+token *kind* — the list and its priority order is `TOKEN_KINDS`, and the
+notes under `TOKEN_PATTERN` say what each kind accepts and why. Two kinds,
+`markup` and `url_or_email`, are matched only so they pass through
+untouched. The part groups inside it (`time_h`, `cur_amt`,
 `room_num`) are what verbalisers read. Order in the alternation is priority:
 a clock time wins over the bare integers inside it, a phone number over the
 digit runs it is made of.
@@ -80,4 +81,4 @@ OpenFst built from source and a vendored `libfst.so` — and both mis-read the
 classes this package exists for: phone numbers as quantities, `302號房` as a
 date, and WeTextProcessing force-simplifies every Traditional character in a
 sentence it touches. The classes a spoken product needs are a bounded set;
-implementing them directly costs ~3 MB of pure Python and stays debuggable.
+implementing them directly costs ~1.5 MB of pure Python (num2words included) and stays debuggable.

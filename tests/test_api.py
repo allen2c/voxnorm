@@ -2,10 +2,13 @@
 
 import random
 import time
+from types import ModuleType
 
 import pytest
 
-from voxnorm import normalize
+import voxnorm
+from voxnorm import en, ja, ko, normalize, zh
+from voxnorm.tokens import TOKEN_KINDS
 
 
 def test_auto_detects_chinese_on_one_han_character() -> None:
@@ -80,6 +83,16 @@ def test_long_digit_run_reads_digit_by_digit(lang: str) -> None:
 def test_long_digit_run_digits_per_language() -> None:
     assert normalize("12345678901234567", lang="ja") == "一二三四五六七八九〇一二三四五六七"
     assert normalize("12345678901234567", lang="ko") == "일이삼사오육칠팔구공일이삼사오육칠"
+
+
+@pytest.mark.parametrize("module", [zh, en, ja, ko])
+def test_every_verbaliser_speaks_every_kind(module: ModuleType) -> None:
+    # TOKEN_KINDS is the contract; a missing rule would raise KeyError mid-text.
+    assert set(module._RULES) == set(TOKEN_KINDS)
+
+
+def test_public_surface() -> None:
+    assert voxnorm.__all__ == ["__version__", "normalize"]
 
 
 @pytest.mark.parametrize("lang", ["zh", "zh-CN", "en", "ja", "ko"])

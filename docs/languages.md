@@ -12,7 +12,11 @@ produced 十兩萬 and an adversarial review caught it. Interior zeros compress
 to one 零, positional gaps are voiced (十萬零五十), values at 10^16 and
 beyond read digit by digit (number_to_zh refuses them). A leading zero or a
 digit string before 號/室 reads digit by digit; two digits before 號 is a
-day of the month and stays grouped.
+day of the month and stays grouped. A lone written 2 is 兩 where the text
+itself says it counts something: before a magnitude character (2萬 → 兩萬,
+2千 → 兩千) and as a currency amount ($2 → 兩元). Before a measure word
+(2位, 2晚) it is still 二; that needs a closed word list (planned, 0.3.0).
+A currency multiplier is spoken before the unit (NT$3.5萬 → 新台幣三點五萬元).
 
 ## cn (Simplified Chinese)
 
@@ -24,9 +28,17 @@ here, not the yen `zh` reads.
 ## en
 
 num2words cardinals/ordinals/years, plus the readings it cannot know: `:05`
-is "oh five", phones are digit words with comma pauses, room codes are digit
-by digit. Under a forced `lang="en"` the CJK-anchored kinds (digits before
+is "oh five", 13:00 is "thirteen hundred" ("o'clock" belongs to 1–12),
+phones are digit words with comma pauses, room codes are digit by digit,
+money with two decimals is dollars and cents (pounds and pence; yen and won
+keep the decimal), `1st` is "first", and a CJK multiplier is multiplied out
+(NT$3.5萬 → thirty-five thousand NT dollars). num2words' own commas ("one
+thousand, one hundred") are stripped: a TTS voice pauses on them. Spoken
+words are padded from any Latin letter or digit they touch (`9:30am` → nine
+thirty am). Under a forced `lang="en"` the CJK-anchored kinds (digits before
 號/室/年) stay written rather than gluing English words onto raw anchors.
+Cardinals keep num2words' British "and" (one hundred and one); the US
+variant is an open decision for 0.3.0.
 
 ## ja
 
@@ -40,8 +52,10 @@ pronunciation of the emitted kanji (四時 as よじ) is the TTS frontend's job.
 num2words `ko` is sino-only; the native numerals a clock needs are the
 in-repo `_NATIVE_HOURS` table (한 시, 두 시 — never 일 시; sino past twelve,
 십사 시). Months are a lookup because June and October are irregular
-(유월/시월). Digit codes read 공 for zero; decimals write unspaced (삼점오)
-while the counter nouns 시/분/원 take a space.
+(유월/시월). Digit codes read 공 for zero, but a decimal's zero is 영
+(영점영오); decimals write unspaced (삼점오) while the counter nouns 시/분/원
+take a space. A year speaks only before 년; under a forced `lang="ko"` a
+`2026年` stays written (ja and zh mirror this for 年).
 
 ## Adding a language
 

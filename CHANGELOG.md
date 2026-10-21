@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.2.2 — 2026-10-21
+
+Correctness only, from the four-angle review
+(`docs/experiments/0002-multi-angle-review-of-0.2.1`). No new written forms
+beyond what the fixes needed (`ordinal`, `url_or_email`).
+
+- Fix: en, ja and ko no longer crash on long digit runs (OverflowError from
+  num2words); past 16 digits every language reads digit by digit.
+- Fix: the `percent` scan was quadratic on comma-heavy input (40 KB took
+  25–50 s); now linear.
+- Fix: a `str` passed as `code_words` raises `TypeError` instead of
+  licensing each of its characters.
+- A comma, colon or point with a word on its far side is punctuation, not
+  part of a form: `金額：1,200元`, `價格12, 謝謝`, `I have 3, 4 apples`,
+  `It costs 5.` and `NT$500/人` now convert. Digits joined by a separator
+  (`3,4`, `3:2`, `10~20%`, `-$5`, `$10-20`, `NT$1,000~2,000`,
+  `分機1234-5678`, `12:30.5`) stay whole instead of half-converting. A
+  tilde after a word joins two complete forms: `1,000元～2,000元`.
+- One amount grammar: `1,000.50` is scanned; `€3,50`, `1,5%`, `0,123` stay
+  written; `$5, $6` keeps its comma.
+- Currency: a written 元 after an amount is not doubled (`NT$12,800元`), and
+  a multiplier is read (`NT$3.5萬` → 新台幣三點五萬元; en multiplies out).
+- Phones: spaces around `#`/轉 extensions, `0912345678#12`, `(02) 2345 6789`,
+  `+1 (800) 555-1234`, three groups after the lead zero; a too-long
+  extension, `+5`, `#3` and `a+123…` stay written.
+- New passthrough kind `url_or_email`; `_` and `=` join forms
+  (`file_v2_12.txt`). Markup needs a tag name and quoted attributes, so
+  `1<x and 5>2` is text. `1920x1080` and `***12***` no longer read as codes.
+- A year speaks only before its own script's 年/년.
+- Readings: zh 2 before 百千萬億兆 and a currency amount of 2 read 兩; en
+  ordinals (`1st` → first, new kind `ordinal`), 13:00 → thirteen hundred,
+  `$1.50` → one dollar and fifty cents, no comma pauses inside cardinals,
+  spoken words padded from adjacent letters and digits (`9:30am`); ko
+  decimal zero is 영.
+- `normalize` is idempotent under a seeded fuzz: guards are symmetric, so a
+  conversion never unblocks its neighbour on a second pass.
+- Packaging: `__all__`, Python 3.10–3.13 and `Typing :: Typed` classifiers,
+  sdist limited to source, tests and docs; the release workflow runs the
+  tests and refuses a tag that differs from `__version__`.
+
 ## 0.2.1 — 2026-10-21
 
 - Phone shapes: a leading-zero area code in half- or full-width parentheses

@@ -29,7 +29,7 @@ OpenFst compiled from source and a permanently vendored `libfst.so` -- and
 both mis-read the very classes this package exists for (phone numbers as
 quantities, room numbers as dates, and in one case force-simplifying every
 Traditional character in the sentence). The classes a spoken product actually
-needs are a bounded set; implementing them directly costs ~3 MB of pure
+needs are a bounded set; implementing them directly costs ~1.5 MB of pure
 Python and stays debuggable.
 
 The charter is **structural only, never guess**. A form whose reading is
@@ -56,7 +56,37 @@ from collections.abc import Iterable
 from voxnorm import cn, en, ja, ko, zh
 from voxnorm.tokens import TOKEN_KINDS, pattern_for
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
+__all__ = ["__version__", "normalize"]
+
+_VERBALIZERS = {
+    "zh": zh.verbalize,
+    "zh_cn": cn.verbalize,
+    "en": en.verbalize,
+    "ja": ja.verbalize,
+    "ko": ko.verbalize,
+}
+
+_SIMPLIFIED_SUBTAGS = frozenset({"cn", "hans", "sg"})
+
+_HAN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
+"""CJK Unified Ideographs (extension A, the base block, and the compatibility
+block) -- one match anywhere is the evidence the text is Chinese, once kana
+and hangul have had their look."""
+
+_KANA = re.compile(r"[ぁ-ゖァ-ヺー]")
+"""Hiragana and katakana (plus the prolonged-sound mark) -- checked before
+`_HAN`, because Japanese text carries kanji too."""
+
+_HANGUL = re.compile(r"[가-힣]")
+"""Precomposed hangul syllables -- Korean shares no script with the others."""
+
+_SIMPLIFIED_ONLY = frozenset("万亿点号两说对时会开关议历后发东车长门问间头买卖体见")
+_TRADITIONAL_ONLY = frozenset("萬億點號兩說對時會開關議歷後發東車長門問間頭買賣體見")
+"""Twenty-six high-frequency characters whose glyph differs between the two
+scripts -- a heuristic, not a converter. Text showing Simplified evidence and
+no Traditional evidence reads as zh-CN; anything else Chinese defaults to
+Traditional, the package's home locale."""
 
 
 def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] = ()) -> str:
@@ -91,37 +121,6 @@ def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] =
     verbalize = _VERBALIZERS[_resolve_lang(text, lang)]
     pattern = pattern_for(tuple(code_words))
     return pattern.sub(lambda match: verbalize(_kind_of(match), match), text)
-
-
-_VERBALIZERS = {
-    "zh": zh.verbalize,
-    "zh_cn": cn.verbalize,
-    "en": en.verbalize,
-    "ja": ja.verbalize,
-    "ko": ko.verbalize,
-}
-
-_SIMPLIFIED_SUBTAGS = frozenset({"cn", "hans", "sg"})
-
-_HAN = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
-"""CJK Unified Ideographs (extension A, the base block, and the compatibility
-block) -- one match anywhere is the evidence the text is Chinese, once kana
-and hangul have had their look."""
-
-_KANA = re.compile(r"[ぁ-ゖァ-ヺー]")
-"""Hiragana and katakana (plus the prolonged-sound mark) -- checked before
-`_HAN`, because Japanese text carries kanji too."""
-
-_HANGUL = re.compile(r"[가-힣]")
-"""Precomposed hangul syllables -- Korean shares no script with the others."""
-
-
-_SIMPLIFIED_ONLY = frozenset("万亿点号两说对时会开关议历后发东车长门问间头买卖体见")
-_TRADITIONAL_ONLY = frozenset("萬億點號兩說對時會開關議歷後發東車長門問間頭買賣體見")
-"""Twenty-six high-frequency characters whose glyph differs between the two
-scripts -- a heuristic, not a converter. Text showing Simplified evidence and
-no Traditional evidence reads as zh-CN; anything else Chinese defaults to
-Traditional, the package's home locale."""
 
 
 def _resolve_lang(text: str, lang: str | None) -> str:

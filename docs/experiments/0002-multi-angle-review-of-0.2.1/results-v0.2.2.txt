@@ -1,0 +1,18 @@
+   Building voxnorm @ file:///home/allenchou/works/voxnorm/.claude/worktrees/merge-origin-main
+      Built voxnorm @ file:///home/allenchou/works/voxnorm/.claude/worktrees/merge-origin-main
+Uninstalled 1 package in 0.48ms
+Installed 1 package in 0.69ms
+pending 0.3.0 time-range [zh] '營業時間8:00-17:00' -> '營業時間8:00-17:00' (planned '營業時間八點到十七點')
+pending 0.3.0 time-range [zh] '9:00～18:00' -> '9:00～18:00' (planned '九點到十八點')
+pending 0.3.0 am-pm-time [zh] '10:00 AM' -> '十點 AM' (planned '上午十點')
+pending 0.3.0 am-pm-time [en] '9:30pm' -> 'nine thirty pm' (planned 'nine thirty p m')
+pending 0.3.0 slash-date-four-digit-year [zh] '2026/10/16' -> '2026/10/16' (planned '二零二六年十月十六日')
+pending 0.3.0 temperature [zh] '25°C' -> '二十五°C' (planned '攝氏二十五度')
+pending 0.3.0 temperature [en] '25°C' -> 'twenty-five°C' (planned 'twenty-five degrees Celsius')
+pending 0.3.0 unit-symbols [zh] '5kg' -> '五kg' (planned '五公斤')
+pending 0.3.0 unit-symbols [zh] '100m²' -> '一百m²' (planned '一百平方公尺')
+pending 0.3.0 room-word-with-connective [zh] '房號是1203' -> '房號是一千兩百零三' (planned '房號是一二零三')
+pending 0.3.0 us-phone [en] '800-555-1234' -> '800-555-1234' (planned 'eight zero zero, five five five, one two three four')
+pending 0.3.0 zh-liang-before-measure-word [zh] '共2位成人，入住2晚' -> '共二位成人，入住二晚' (planned '共兩位成人，入住兩晚')
+pending 0.3.0 ko-native-counters [ko] '2명, 3잔' -> '이명, 삼잔' (planned '두 명, 세 잔')
+voxnorm 0.2.2: 58 pass, 0 FAIL, 13 pending

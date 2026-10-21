@@ -60,7 +60,8 @@ and lands on the Chinese reading — pass `lang="ja"` when you know better.)
 The charter is **structural only, never guess**: a form whose reading is
 ambiguous does not convert (`1/2` the fraction and `8/17` the date are the
 same slash string, so no slash form converts at all; `7-11` the shop and
-`3-5天` the range are the same hyphen string, so no hyphen form does either).
+`3-5天` the range are the same hyphen string, so no hyphen form does either,
+unless its shape is an ISO date or a phone number).
 What is not converted is simply spoken as written — which is where it started.
 
 ## Codes the text does not mark
@@ -99,7 +100,7 @@ ARM box they need OpenFst compiled from source and a permanently vendored
 phone numbers as quantities, `302號房` as a date, and (WeTextProcessing)
 force-simplifying every Traditional character in the sentence it touches. The
 classes a spoken product needs are a bounded set; implementing them directly
-costs ~3 MB of pure Python and stays debuggable.
+costs ~1.5 MB of pure Python (num2words included) and stays debuggable.
 
 ## Install
 

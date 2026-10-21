@@ -101,6 +101,24 @@ def digits_to_zh(digits: str) -> str:
     return "".join(_DIGITS[int(char)] for char in digits if char.isdigit())
 
 
+def amount_to_zh(amount: str) -> str:
+    """A written amount, commas allowed, spoken: `1,200.5` -> 一千兩百點五."""
+    integer, _, fraction = amount.replace(",", "").partition(".")
+    spoken = _spoken_int(integer)
+    return f"{spoken}點{digits_to_zh(fraction)}" if fraction else spoken
+
+
+def currency_amount_to_zh(match: re.Match) -> str:
+    """The amount of a `currency` match, multiplier included: `3.5萬` -> 三點五萬.
+
+    An amount of exactly 2 is a count of money, so it reads 兩 (兩元, 兩萬元),
+    never the 二 a bare digit string would take.
+    """
+    amount = match["cur_amt"]
+    spoken = "兩" if amount == "2" else amount_to_zh(amount)
+    return spoken + _MULTIPLIERS.get(match["cur_mult"], "")
+
+
 def _section_to_zh(section: int) -> str:
     rendered = ""
     for index in (3, 2, 1, 0):
@@ -136,23 +154,6 @@ def _spoken_int(digits: str) -> str:
     if (len(digits) > 1 and int(digits[0]) == 0) or len(digits) > 16:
         return digits_to_zh(digits)
     return number_to_zh(int(digits))
-
-
-def amount_to_zh(amount: str) -> str:
-    integer, _, fraction = amount.replace(",", "").partition(".")
-    spoken = _spoken_int(integer)
-    return f"{spoken}點{digits_to_zh(fraction)}" if fraction else spoken
-
-
-def currency_amount_to_zh(match: re.Match) -> str:
-    """The amount of a `currency` match, multiplier included: `3.5萬` -> 三點五萬.
-
-    An amount of exactly 2 is a count of money, so it reads 兩 (兩元, 兩萬元),
-    never the 二 a bare digit string would take.
-    """
-    amount = match["cur_amt"]
-    spoken = "兩" if amount == "2" else amount_to_zh(amount)
-    return spoken + _MULTIPLIERS.get(match["cur_mult"], "")
 
 
 def _currency(match: re.Match) -> str:

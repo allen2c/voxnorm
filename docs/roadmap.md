@@ -10,11 +10,14 @@ Evidence for both releases below:
 [0002-multi-angle-review-of-0.2.1](experiments/0002-multi-angle-review-of-0.2.1/README.md),
 cited here as `0002/<finding>`.
 
-## v0.2.2 — correctness, no new forms
+## v0.2.2 — correctness, no new forms (shipped)
 
 Fix what crashes, what half-converts, and what is plainly misread. One
 commit per work package, in this order (later ones build on the guards of
-the second).
+the second). Done: every 0.2.2 probe case passes
+(`0002/results-v0.2.2.txt`); deviations are noted in the 0002 record and
+CHANGELOG (`url_or_email` and `ordinal` kinds; `#`, `+`, `_`, `=` and
+currency symbols joined the guards to keep `normalize` idempotent).
 
 ### 1. Safety
 
