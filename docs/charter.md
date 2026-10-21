@@ -30,15 +30,21 @@ through untouched, digits in its attributes included.
 
 - **Slash forms**: `1/2` (fraction) and `8/17` (date) are the same string.
 - **Hyphen and tilde forms**: `7-11` (shop), `3-5天` (range), `1234-5678`
-  (phone stub, or the year range `1990-2000`), `-5` (minus). Unless a phone
-  shape above claims them, digits touching `-`, `~`, `～`, `–` never
-  convert, so the form passes whole rather than half-converting to `七-十一`
-  or `1990-二零零零年`.
+  (phone stub, or the year range `1990-2000`), `-5` (minus), `10~20%`,
+  `-$5`, `$10-20`. Unless an ISO date or a phone shape above claims them,
+  digits joined by `-`, `~`, `～`, `–` never convert, so the form passes
+  whole rather than half-converting to `七-十一` or `1990-二零零零年`. A
+  tilde after a word is a range mark between two complete forms, and each
+  side converts: `1,000元～2,000元`, `20%~30%`.
+- **Comma forms that are not thousands**: `3,4`, `3,50` (a European
+  decimal), `1,5%`, `0,123`. A comma with a word or space after it is
+  punctuation, so `12, 謝謝` and `3, 4 apples` convert.
 - **Long digit runs**: `20261016008` reads as a quantity. Length alone does
   not make a code (an ungrouped `1500000000元` budget is a quantity), so
   there is no digit-count threshold; 序號 or 編號 before the run is
   vocabulary, which belongs to the caller.
-- **Colon forms the clock rejects**: `24:00`, `3:2`.
+- **Colon forms the clock rejects**: `24:00`, `3:2`. A colon after a word
+  is a label, so `金額：1,200元` converts.
 - **Full-width digits**: the scanner is ASCII-only; zenkaku forms pass whole.
 - **Two digits before 號**: `17號` is a day, `302號` is a room.
 - **A letter after digits**: `100km`, `10th`, `4K` are quantities.
@@ -59,7 +65,7 @@ normalize("請撥打 8979-8888。", code_words=["撥打"])
 Words are literal, directly before (whitespace allowed) or after the digit
 run; a connective belongs inside the word (`末四碼是`). The run may be
 hyphen-joined digit groups (`8979-8888`), which a word licenses as a code;
-any other form character (`3.5`, `12:00`) keeps the run out.
+any other joined form (`3.5`, `12:00`) keeps the run out.
 
 When a bug report asks for a new context word, the answer is `code_words`
 or the caller's own template, not a scanner change.

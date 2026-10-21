@@ -352,3 +352,54 @@ def test_customer_service_sentence() -> None:
         "撥打零二四一二八八七八或零二八九七九八八八八，謝謝。"
     )
     assert normalize(text) == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # A separator with a word on its far side is punctuation, not a form.
+        ("價格12, 謝謝", "價格十二, 謝謝"),
+        ("金額：1,200元", "金額：一千兩百元"),
+        ("數量:3", "數量:三"),
+        ("NT$500/人", "新台幣五百元/人"),
+        ("共5.", "共五."),
+        # A tilde after a word separates two complete forms; each side converts.
+        ("1,000元～2,000元", "一千元～兩千元"),
+        ("20%~30%", "百分之二十~百分之三十"),
+        # Comma grouping with a decimal is one amount.
+        ("共1,000.5元", "共一千點五元"),
+    ],
+)
+def test_separators_after_words_are_punctuation(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # Digits joined by a separator stay whole: none of these may half-convert.
+        "降幅10~20%",
+        "3-5%",
+        "跌幅 -5%",
+        "-$5",
+        "NT$1,000~2,000",
+        "分機1234-5678",
+        "12:30.5",
+        "12:00:05",
+        "2026-08-17-01",
+        "2026-08-17/18",
+        "共3,4人",
+        "比分3:2",
+        "$3.5.2",
+        # A comma that is not a thousands separator stops the amount.
+        "€3,50",
+        "1,5%",
+        "0,123",
+    ],
+)
+def test_joined_forms_stay_whole(text: str) -> None:
+    assert normalize(text, lang="zh") == text
+
+
+def test_amount_keeps_the_comma_after_it() -> None:
+    assert normalize("$5, $6", lang="zh") == "五元, 六元"

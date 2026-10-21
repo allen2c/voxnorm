@@ -135,6 +135,23 @@ def test_code_words_keep_hyphen_group_pauses() -> None:
     assert normalize("dial 8979-8888", code_words=["dial"]) == "dial eight nine seven nine, eight eight eight eight"
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("I have 3, 4 or 5 apples.", "I have three, four or five apples."),
+        ("It costs 5.", "It costs five."),
+        ("Step 3: go", "Step three: go"),
+    ],
+)
+def test_punctuation_after_numbers(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+@pytest.mark.parametrize("text", ["$10-20", "Room 12-3", "v1.2.3", "192.168.1.1:8080", "7-Eleven", "a12@x.com"])
+def test_joined_forms_stay_whole(text: str) -> None:
+    assert normalize(text) == text
+
+
 def test_markup_passes_through() -> None:
     text = 'wait <break time="500ms"/> then <emphasis>12</emphasis>'
     assert normalize(text) == 'wait <break time="500ms"/> then <emphasis>twelve</emphasis>'

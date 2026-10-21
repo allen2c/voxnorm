@@ -13,8 +13,12 @@ a clock time wins over the bare integers inside it, a phone number over the
 digit runs it is made of.
 
 `TOKEN_KINDS` lists every kind in priority order and is the contract every
-verbaliser must satisfy. `_FORM_CHARS` names the characters that, touching
-a digit run, mean "part of a larger form, do not half-convert".
+verbaliser must satisfy. `_STARTS_CLEAN` and `_ENDS_CLEAN` are the guards
+every digit-bearing alternative carries: a hyphen, slash or point touching
+the digits, or a comma, colon or tilde with a digit on its far side, means
+"part of a larger form, do not half-convert"; the same separator with a word
+on its far side is punctuation. `_AMOUNT` is the one amount grammar
+(`1,200`, `1,000.50`, `3.5`) shared by currency, percent and decimals.
 
 `pattern_for(code_words)` returns `TOKEN_PATTERN` with a `code` alternative
 spliced in ahead of everything else, built from the caller's literal words.

@@ -57,35 +57,50 @@ TOKEN_KINDS = (
 top-level groups of `TOKEN_PATTERN`. `markup` is matched only so that it is
 left alone: every verbaliser returns it unchanged."""
 
-_FORM_CHARS = r"\d./:：,\-~～–"
-"""Characters that, touching a digit run, mean the run is part of a larger
-written form the loose alternatives must not half-convert: another digit, a
-point or slash, a colon (half- or full-width), a comma, and the hyphen, tilde
-and en-dash that join ranges, shop names, and code fragments."""
+_STARTS_CLEAN = r"(?<![\d\-/.$€¥£₩])(?<!\d[,:：~～–])"
+"""A form may start here: no digit, minus/hyphen, slash, point or currency
+symbol directly before it (`-5`, `1/2`, `.5`, `1.2`, and the `5` of a `-$5`
+the currency form refused), and no comma, colon, tilde or en-dash
+with a digit before *that* (`3,4`, `3:2`, `10~20`). A separator after a word
+is punctuation, not part of a form: `金額：1,200`, `3, 4`, `元～2,000` start
+clean."""
+
+_ENDS_CLEAN = r"(?![\d\-~～–%@])(?!\.[\dA-Za-z])(?![,:：/]\d)"
+"""A form may end here: no digit, hyphen, tilde, en-dash, `%` or `@` directly
+after it (`7-11`, `10~20`, `a12@x`), no point with a digit or Latin letter
+after it (`1.2.3`, `a12345.lee@…`, `v2.txt`), and no comma, colon or slash
+with a digit after *that* (`3,4`, `12:00:05`, `1/2`). A point, comma or slash
+followed by anything else ends a sentence, a clause, or a per-unit price
+(`5.`, `12, 謝謝`, `NT$500/人`)."""
+
+_AMOUNT = r"(?:[1-9]\d{0,2}(?:,\d{3})+|\d+)(?:\.\d+)?"
+"""A written amount: comma-grouped thousands (`1,200`, `1,000.50`) or a plain
+run (`1200`, `3.5`). A comma anywhere else (`3,50`, `1,5`, `0,123`) is a
+European decimal or a list, so the amount stops before it."""
 
 TOKEN_PATTERN = re.compile(
     rf"""
       (?P<markup><[A-Za-z/!][^<>]*>)
-    | (?P<time>(?<![\d:])(?P<time_h>[01]?\d|2[0-3]):(?P<time_m>[0-5]\d)(?![\d:]))
-    | (?P<iso_date>(?<!\d)(?P<iso_y>(?:19|20)\d\d)-(?P<iso_mo>0?[1-9]|1[0-2])-(?P<iso_d>0?[1-9]|[12]\d|3[01])(?!\d))
+    | (?P<time>{_STARTS_CLEAN}(?P<time_h>[01]?\d|2[0-3]):(?P<time_m>[0-5]\d){_ENDS_CLEAN})
+    | (?P<iso_date>{_STARTS_CLEAN}(?P<iso_y>(?:19|20)\d\d)-(?P<iso_mo>0?[1-9]|1[0-2])-(?P<iso_d>0?[1-9]|[12]\d|3[01]){_ENDS_CLEAN})
     | (?P<phone>
         (?P<phone_num>
           (?<![\d+])(?P<phone_plus>\+)(?:\d{{1,3}}[-\ ]\d{{1,4}}(?:[-\ ]\d{{1,4}}){{0,2}}[-\ ]\d{{3,4}}|\d{{8,15}})
         | [(（]0\d{{1,3}}[)）]\ ?\d{{3,4}}-?\d{{3,4}}
-        | (?<!\d)0\d{{1,3}}(?:(?:[-\ ]\d{{3,4}}){{2}}|[-\ ]\d{{6,8}})
+        | {_STARTS_CLEAN}0\d{{1,3}}(?:(?:[-\ ]\d{{3,4}}){{2}}|[-\ ]\d{{6,8}})
         )
         (?:\ ?[\#轉](?P<phone_ext>\d{{1,6}}))?
         (?![\d-])
       )
-    | (?P<currency>(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>\d[\d,]*(?:\.\d+)?))
-    | (?P<percent>(?<![\d.,])(?P<pct_num>\d[\d,]*(?:\.\d+)?)\ ?%)
-    | (?P<room_en>(?P<room_word>\b[Rr]oom|\b[Ee]xt\.?|房號|分機)\ ?\#?(?P<room_num>\d{{2,5}})(?!\d))
-    | (?P<alnum>(?:(?<=[A-Za-z])|(?<=[*＊●•]{{3}}))\d+(?![{_FORM_CHARS}]))
-    | (?P<room_cjk>(?<![{_FORM_CHARS}])\d{{3,10}}(?=號|号|室|호))
-    | (?P<year>(?<![{_FORM_CHARS}])(?:19|20)\d\d(?=年|년))
-    | (?P<decimal>(?<![{_FORM_CHARS}])\d+\.\d+(?![{_FORM_CHARS}]))
-    | (?P<comma_int>(?<![{_FORM_CHARS}])\d{{1,3}}(?:,\d{{3}})+(?![{_FORM_CHARS}]))
-    | (?P<bare_int>(?<![{_FORM_CHARS}])\d+(?![{_FORM_CHARS}]))
+    | (?P<currency>{_STARTS_CLEAN}(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>{_AMOUNT}){_ENDS_CLEAN})
+    | (?P<percent>{_STARTS_CLEAN}(?P<pct_num>{_AMOUNT})\ ?%)
+    | (?P<room_en>(?P<room_word>\b[Rr]oom|\b[Ee]xt\.?|房號|分機)\ ?\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
+    | (?P<alnum>(?:(?<=[A-Za-z])|(?<=[*＊●•]{{3}}))\d+{_ENDS_CLEAN})
+    | (?P<room_cjk>{_STARTS_CLEAN}\d{{3,10}}(?=號|号|室|호))
+    | (?P<year>{_STARTS_CLEAN}(?:19|20)\d\d(?=年|년))
+    | (?P<decimal>{_STARTS_CLEAN}(?:[1-9]\d{{0,2}}(?:,\d{{3}})+|\d+)\.\d+{_ENDS_CLEAN})
+    | (?P<comma_int>{_STARTS_CLEAN}[1-9]\d{{0,2}}(?:,\d{{3}})+{_ENDS_CLEAN})
+    | (?P<bare_int>{_STARTS_CLEAN}\d+{_ENDS_CLEAN})
     """,
     re.VERBOSE | re.ASCII,
 )
@@ -136,21 +151,25 @@ TOKEN_PATTERN = re.compile(
   digit by digit in Chinese, 二千二十六年 / 이천이십육년 as cardinals in
   Japanese and Korean — the split lives in the verbalisers); without the
   suffix a four-digit integer is a quantity. Neither `year` nor `room_cjk`
-  starts against a form character, so the range `1990-2000年` and the room
+  starts inside a form (`_STARTS_CLEAN`), so the range `1990-2000年` and the room
   `B1-302室` stay whole rather than converting their last group.
-- `decimal` / `comma_int` / `bare_int` — the residue: point decimals,
-  comma-grouped integers, then any digit run. The `_FORM_CHARS` lookarounds
-  keep each from matching inside a form a higher alternative half-consumed,
-  keep version-ish strings (`1.2.3`) whole and untouched, and refuse any
-  digit touching a slash, a colon, or a hyphen/tilde. The `/` guards are the
-  charter's "no slash form converts" applied to the digits inside the form
-  (`1/2` must not become 一/二); the `:`/`：` guards do the same for a colon
-  form the `time` alternative rejected -- an invalid `24:00` must stay
-  written, not half-convert to 二十四:零零 around a stranded colon -- and
-  the `-`/`~` guards the same again for `7-11`, `3-5天`, `1234-5678`, which
-  were half-converting to 七-十一 around a stranded hyphen. A hyphen form is
-  a shop name, a range, a phone stub or a minus sign, and the scanner cannot
-  tell which; whole and written is the honest output.
+- `decimal` / `comma_int` / `bare_int` — the residue: point decimals (comma
+  grouping allowed, `1,000.50`), comma-grouped integers, then any digit run.
+
+Every digit-bearing alternative carries the same `_STARTS_CLEAN` /
+`_ENDS_CLEAN` guards, which keep a form from matching inside a larger one a
+higher alternative refused, keep version-ish strings (`1.2.3`) whole, and
+refuse any digit joined to another by a slash, colon, comma, hyphen or
+tilde. The `/` guards are the charter's "no slash form converts" applied to
+the digits inside the form (`1/2` must not become 一/二); the `:`/`：`
+guards do the same for a colon form `time` rejected (`24:00`, `3:2`); the
+`-`/`~` guards the same again for `7-11`, `3-5天`, `10~20%`, `-$5`, which
+used to half-convert around a stranded hyphen. A hyphen form is a shop name,
+a range, a phone stub or a minus sign, and the scanner cannot tell which;
+whole and written is the honest output. Separators that touch a digit on
+one side only are punctuation (`金額：1,200`, `12, 謝謝`, `5.`) and do not
+block. Before 0.2.2 any comma, colon or point next to a digit blocked it,
+so a number before `, ` or after a `：` label never converted.
 """
 
 
@@ -164,7 +183,7 @@ def pattern_for(code_words: tuple[str, ...]) -> re.Pattern:
     trailing one stays outside the match (a lookahead). The run may be
     hyphen-joined groups (`撥打 8979-8888`): the word settles a form the
     scanner alone must leave written, and languages that pause between
-    groups still do. It must not otherwise touch a form character, so a word
+    groups still do. It must otherwise start and end clean, so a word
     never licenses half of `3.5` or `12:00`.
     Without a leading word the run must also start clean (no digit, form
     character or Latin letter before it), and that lookbehind sits *before*
@@ -181,8 +200,8 @@ def pattern_for(code_words: tuple[str, ...]) -> re.Pattern:
     code = rf"""
       (?P<code>
         (?P<code_pre>(?:{words})\s*)?
-        (?(code_pre)|(?<![{_FORM_CHARS}A-Za-z]))
-        (?P<code_num>\d+(?:-\d+)*)(?![{_FORM_CHARS}])
+        (?(code_pre)|(?<![A-Za-z]){_STARTS_CLEAN})
+        (?P<code_num>\d+(?:-\d+)*){_ENDS_CLEAN}
         (?(code_pre)|(?=\s*(?:{words})))
       )
     | """
