@@ -118,19 +118,15 @@ Each is a new or widened scanner kind with readings in all five languages
 | `0002/unit-symbols` | `kg km cm mm m² ㎡ ml mg` after a number | 公斤 公里 公分 公釐 平方公尺 毫升 毫克; kilograms … |
 | `0002/room-word-with-connective` | `房號是1203`, `房號：1203`, `分機為123` | digit by digit |
 | `0002/us-phone` | `800-555-1234`, `1-800-123-4567`, `(800) 555-1234` | digit groups |
-| `0002/number-after-tilde` | `1,000元～2,000元` | the number after a tilde converts when a non-digit precedes the tilde |
 | `0002/zh-liang-before-measure-word` | `2位 2晚 2個 2點 2小時` … (closed list, not after 第) | 兩 |
-| `0002/ko-native-counters` | `2명 2개 3잔 3살` … (closed list) | 두 명, 두 개, 세 잔, 세 살 |
 
-### Decisions to settle before 0.3.0
+The one decision: the measure-word list is closed, starts from the
+reviewers' list in 0002, and grows only with a test per word.
 
-| Question | Recommendation |
-| --- | --- |
-| `year-as-duration`: `2000年歷史` reads as a year | Keep converting `YYYY年`; document as a known residual. The year reading is overwhelmingly the common one, and the cue (歷史, 前) is vocabulary. |
-| `room-shi-as-count`: `超過1000室` reads digit by digit | Keep 室: addresses (`1203室`) are far more common in this text than room counts. Document. |
-| `ko-room-reading`: `302호` | Switch to the sino cardinal (삼백이 호), the usual Korean reading. |
-| Measure-word list (zh) and counter list (ko) | Start with the reviewers' lists in 0002; extend only with a test per word. |
-| en "and" in cardinals | Default en-US (no "and"); `lang="en-GB"` keeps "and". |
-| zh-CN `$` | 美元 on the mainland (元 implies RMB), as `¥` is already overridden. |
-| ROC slash dates `115/10/16` | Leave written: 民國 would be implied, not written. |
-| Group pauses in zh/ja phone readings | Leave flat; a TTS frontend's own prosody handles digit strings. |
+`0002/number-after-tilde` shipped early, in 0.2.2's separator guards.
+
+Deferred, no work planned (status quo stays):
+`ko-native-counters` and `ko-room-reading` (until there is a Korean use
+case); `year-as-duration` and `room-shi-as-count` (known residuals, see
+0002); en US/UK "and", zh-CN `$` as 美元, ROC slash dates, and group pauses
+in zh/ja phone readings (no caller has asked).

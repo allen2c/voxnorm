@@ -107,7 +107,6 @@ CASES = [
     ("number-after-tilde", "0.3.0", "zh", "1,000元～2,000元", "一千元～兩千元"),
     ("zh-liang-before-measure-word", "0.3.0", "zh", "共2位成人，入住2晚", "共兩位成人，入住兩晚"),
     ("zh-liang-before-measure-word", "0.3.0", "zh", "第2位", "第二位"),
-    ("ko-native-counters", "0.3.0", "ko", "2명, 3잔", "두 명, 세 잔"),
 ]
 
 

@@ -140,10 +140,13 @@ Residual found while fixing (0.2.2): a compound currency amount
 digits after the first multiplier convert on their own once the symbol's
 part stays written. Rare in practice; recorded in `tokens.py`.
 
-Open decisions, to settle before 0.3.0 (listed in the roadmap):
-`year-as-duration`, `room-shi-as-count`, `ko-room-reading`, the measure-word
-and counter lists, en US vs UK "and", zh-CN `$` as 美元, ROC slash dates
-`115/10/16`, and group pauses in zh/ja phone readings.
+Open decisions were trimmed on 2026-10-21 to one: the zh measure-word list
+for `zh-liang-before-measure-word` (closed, grown only with a test per
+word). Deferred with no work planned: `ko-native-counters` (its probe case
+was removed) and `ko-room-reading` until there is a Korean use case;
+`year-as-duration` and `room-shi-as-count` stay as known residuals; en
+US/UK "and", zh-CN `$` as 美元, ROC slash dates and zh/ja phone pauses until
+a caller asks.
 
 Left written on purpose (charter): `10/16`, `1/3`, `3:2`, `23:59:59`,
 `7-14個工作天`, `-5` without a unit, `ABC-1234`, `CI 123`, `2年`, `2折`.
