@@ -13,7 +13,10 @@
    languages are explicit-`lang` only.
 4. Add `tests/test_<lang>.py` with one case per kind plus the readings that
    make the language different, and a `code_words` case.
-5. Note it in `CHANGELOG.md` and the language list in `README.md`.
+5. If num2words carries the language, run it and check its actual output
+   first (the ja/ko quirks in `docs/languages.md` were all found by running),
+   and note in the module docstring what had to be worked around.
+6. Note it in `CHANGELOG.md` and the language list in `README.md`.
 
 The scanner does not change for a new language. If a written form the
 language needs is missing from the scanner, that is a scanner change under

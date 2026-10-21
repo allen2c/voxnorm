@@ -16,3 +16,6 @@ trusted publishing from the `pypi` environment. No token lives in the repo;
 the publisher is configured once on pypi.org (project `voxnorm`, owner
 `allen2c`, workflow `release.yml`, environment `pypi`). Watch the run with
 `gh run watch`.
+
+`.github/workflows/ci.yml` runs ruff + pytest on 3.10 and 3.13 for every
+push and PR; never cut a tag from a red main.
