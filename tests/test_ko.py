@@ -77,6 +77,12 @@ def test_code_words() -> None:
     assert normalize("계좌 1234 입니다", code_words=["계좌"]) == "계좌 일이삼사 입니다"
 
 
+@pytest.mark.parametrize(("text", "spoken"), [("0.05", "영점영오"), ("10.01", "십점영일")])
+def test_decimal_zero_is_yeong(text: str, spoken: str) -> None:
+    # 공 is the phone-number zero; after a decimal point it is 영.
+    assert normalize(text, lang="ko") == spoken
+
+
 def test_year_before_han_suffix_stays_written() -> None:
     assert normalize("2026年", lang="ko") == "2026年"
 

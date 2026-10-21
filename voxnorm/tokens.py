@@ -45,6 +45,7 @@ TOKEN_KINDS = (
     "phone",
     "currency",
     "percent",
+    "ordinal",
     "room_en",
     "alnum",
     "room_cjk",
@@ -67,7 +68,7 @@ multiplication `x` with a digit before *that* (`3,4`, `3:2`, `10~20`,
 `1920x1080`). A separator after a word is punctuation, not part of a form:
 `金額：1,200`, `3, 4`, `元～2,000` start clean."""
 
-_ENDS_CLEAN = r"(?![\d\-~～–%@\#_])(?!\.[\dA-Za-z])(?![,:：/xX×]\d)"
+_ENDS_CLEAN = r"(?![\d\-~～–%@\#_+$€¥£₩=])(?!\.[\dA-Za-z])(?![,:：/xX×]\d)"
 """A form may end here: no digit, hyphen, tilde, en-dash, `%`, `@`, `#` or `_`
 directly after it (`7-11`, `10~20`, `a12@x`, a phone's `#123` extension that
 a `code_words` run must leave to the phone, `v2_12`), no point with a digit
@@ -104,11 +105,12 @@ TOKEN_PATTERN = re.compile(
         | {_STARTS_CLEAN}0\d{{8,9}}(?=\ ?[\#轉]\ ?\d)
         )
         (?:\ ?[\#轉]\ ?(?P<phone_ext>\d{{1,6}}))?
-        (?![\d\-\#轉])(?!\ [\#轉])
+        {_ENDS_CLEAN}(?!轉)(?!\ [\#轉])
       )
-    | (?P<currency>{_STARTS_CLEAN}(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>{_AMOUNT})(?P<cur_mult>[千萬万億亿천만억])?(?![千萬万億亿천만억])(?:\ ?元)?{_ENDS_CLEAN})
+    | (?P<currency>(?<![\d\-+/.$€¥£₩\#_=])(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>{_AMOUNT})(?P<cur_mult>[千萬万億亿천만억])?(?![千萬万億亿천만억])(?:\ ?元)?{_ENDS_CLEAN})
     | (?P<percent>{_STARTS_CLEAN}(?P<pct_num>{_AMOUNT})\ ?%)
-    | (?P<room_en>(?P<room_word>\b[Rr]oom|\b[Ee]xt\.?|房號|分機)\ ?\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
+    | (?P<ordinal>(?<![A-Za-z]){_STARTS_CLEAN}(?P<ord_num>\d{{1,6}})(?P<ord_suffix>st|nd|rd|th|ST|ND|RD|TH)(?![A-Za-z\d]))
+    | (?P<room_en>(?P<room_word>(?<![A-Za-z])(?:[Rr]oom|[Ee]xt\.?)|房號|分機)\ ?\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
     | (?P<alnum>(?:(?<=[A-Za-z])(?<!\d[xX])|(?<=[*＊●•]{{3}})(?=\d+(?![\d*＊])))\d+{_ENDS_CLEAN})
     | (?P<room_cjk>{_STARTS_CLEAN}\d{{3,10}}(?=號|号|室|호))
     | (?P<year>{_STARTS_CLEAN}(?:19|20)\d\d(?=年|년))
@@ -164,6 +166,10 @@ TOKEN_PATTERN = re.compile(
   amount may not stop in front of a second multiplier, which would put the
   unit in the middle (一元萬二千), so the symbol and its first part stay
   written.
+- `ordinal` — an English ordinal suffix glued to a number (`1st`, `22nd`,
+  `10th`). The verbaliser reads it only when the suffix matches the number
+  (`1st`, not `1th`); a mismatched one, and every non-English language,
+  returns it unchanged rather than half-reading `一st`.
 - `room_en` / `room_cjk` — a digit string read digit by digit, licensed by an
   explicit context word. The CJK suffix (Traditional 號, Japanese 号/室,
   Korean 호) stays outside the match (lookahead) so `302號房` keeps its 號房;

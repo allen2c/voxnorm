@@ -25,7 +25,7 @@ def test_iso_date() -> None:
 @pytest.mark.parametrize(
     ("text", "spoken"),
     [
-        ("$1,200", "one thousand, two hundred dollars"),
+        ("$1,200", "one thousand two hundred dollars"),
         ("NT$1", "one NT dollar"),
         ("US$3.5", "three point five US dollars"),
     ],
@@ -174,11 +174,73 @@ def test_joined_forms_stay_whole(text: str) -> None:
     [
         # English has no 萬: the multiplier is multiplied out, the 元 dropped.
         ("NT$3.5萬", "thirty-five thousand NT dollars"),
-        ("NT$1,200元", "one thousand, two hundred NT dollars"),
+        ("NT$1,200元", "one thousand two hundred NT dollars"),
     ],
 )
 def test_currency_multiplier_and_unit(text: str, spoken: str) -> None:
     assert normalize(text, lang="en") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("the 1st, 2nd, 3rd and 21st", "the first, second, third and twenty-first"),
+        ("the 11th and 112th", "the eleventh and one hundred and twelfth"),
+        # A suffix that does not fit its number is left alone.
+        ("the 1th", "the 1th"),
+    ],
+)
+def test_ordinals(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("at 13:00", "at thirteen hundred"),
+        ("at 0:00", "at zero hundred"),
+        ("at 9:00", "at nine o'clock"),
+    ],
+)
+def test_on_the_hour(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("$1.50", "one dollar and fifty cents"),
+        ("$12.00", "twelve dollars"),
+        ("$0.01", "one cent"),
+        ("£2.50", "two pounds and fifty pence"),
+        # Three decimals, or a currency without a minor unit, keep the decimal reading.
+        ("$1.505", "one point five zero five dollars"),
+        ("¥1.50", "one point five zero yen"),
+    ],
+)
+def test_money_with_cents(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+def test_cardinals_carry_no_comma_pause() -> None:
+    assert normalize("1100") == "one thousand one hundred"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # Spoken words never touch a Latin letter of the surrounding text.
+        ("open 9:30am", "open nine thirty am"),
+        ("4K video", "four K video"),
+        ("2026-08-17T10:00", "August seventeenth, twenty twenty-six T ten o'clock"),
+    ],
+)
+def test_spoken_words_do_not_glue_to_letters(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+def test_code_word_glued_to_digits_gets_a_space() -> None:
+    assert normalize("plate4820", code_words=["plate"]) == "plate four eight two zero"
 
 
 def test_markup_passes_through() -> None:

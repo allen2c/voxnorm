@@ -55,10 +55,39 @@ _MULTIPLIERS = {
 }
 """A CJK multiplier written after a currency amount, as the factor to apply."""
 
+_MINOR_UNITS = {
+    "NT$": ("cent", "cents"),
+    "NTD": ("cent", "cents"),
+    "US$": ("cent", "cents"),
+    "USD": ("cent", "cents"),
+    "$": ("cent", "cents"),
+    "€": ("cent", "cents"),
+    "£": ("penny", "pence"),
+}
+"""(singular, plural) of the hundredth unit, for currencies that have one; a
+two-decimal amount in these reads as major and minor units. Yen and won have
+no minor unit in use and keep the decimal reading."""
+
 
 def verbalize(kind: str, match: re.Match) -> str:
-    """Spell the token `match` of class `kind` the way English says it."""
-    return _RULES[kind](match)
+    """Spell the token `match` of class `kind` the way English says it.
+
+    Spoken words never touch a Latin letter or digit of the surrounding text:
+    `9:30am` is "nine thirty am", `A123` is "A one two three", `4K` is
+    "four K". Glued, they would read wrong and re-scan differently on a second
+    pass (`5%483` -> "five percent483", whose 483 then looks letter-glued).
+    Chinese needs no such gap, so the other verbalisers do not pad.
+    """
+    spoken = _RULES[kind](match)
+    if spoken == match[0]:
+        return spoken
+    before = match.string[match.start() - 1 : match.start()]
+    after = match.string[match.end() : match.end() + 1]
+    if _is_latin_alnum(before) and not spoken.startswith(" "):
+        spoken = " " + spoken
+    if _is_latin_alnum(after) and not spoken.endswith(" "):
+        spoken += " "
+    return spoken
 
 
 def digits_to_en(digits: str) -> str:
@@ -66,14 +95,21 @@ def digits_to_en(digits: str) -> str:
     return " ".join(_DIGIT_WORDS[int(char)] for char in digits if char.isdigit())
 
 
+def _is_latin_alnum(char: str) -> bool:
+    return char.isascii() and char.isalnum()
+
+
 def _cardinal(value: int) -> str:
-    return num2words(value)
+    # num2words writes "one thousand, one hundred"; a TTS voice pauses on that
+    # comma, which no speaker does.
+    return num2words(value).replace(",", "")
 
 
 def _time(match: re.Match) -> str:
     hour, minute = int(match["time_h"]), int(match["time_m"])
     if minute == 0:
-        return f"{_cardinal(hour)} o'clock"
+        # "o'clock" belongs to the twelve-hour dial; 13:00 is "thirteen hundred".
+        return f"{_cardinal(hour)} o'clock" if 1 <= hour <= 12 else f"{_cardinal(hour)} hundred"
     if minute < 10:
         return f"{_cardinal(hour)} oh {_DIGIT_WORDS[minute]}"
     return f"{_cardinal(hour)} {_cardinal(minute)}"
@@ -94,7 +130,11 @@ def _phone(match: re.Match) -> str:
 
 
 def _code(match: re.Match) -> str:
-    return f"{match['code_pre'] or ''}{_digit_groups(match['code_num'])}"
+    pre = match["code_pre"] or ""
+    # `plate4820` is "plate four eight two zero": a glued word gets its space.
+    if pre and not pre[-1].isspace():
+        pre += " "
+    return f"{pre}{_digit_groups(match['code_num'])}"
 
 
 def _digit_groups(written: str) -> str:
@@ -125,15 +165,31 @@ def _currency(match: re.Match) -> str:
         value = Decimal(amount) * _MULTIPLIERS[match["cur_mult"]]
         amount = str(int(value)) if value == value.to_integral_value() else format(value.normalize(), "f")
     singular, plural = _CURRENCIES[match["cur_sym"]]
+    integer, _, fraction = amount.partition(".")
+    minor = _MINOR_UNITS.get(match["cur_sym"])
+    if minor and len(fraction) == 2 and len(integer) <= 16:
+        # Money with cents is dollars and cents, not "one point five zero".
+        return _major_and_minor(int(integer), int(fraction), (singular, plural), minor)
     unit = singular if amount == "1" else plural
     return f"{_amount_to_en(amount)} {unit}"
 
 
-def _alnum(match: re.Match) -> str:
-    # A letter-glued identifier opens a space on each Latin-lettered side:
-    # `A123` is "A one two three", `H1N1` is "H one N one". Chinese needs no gap.
-    after = match.string[match.end() : match.end() + 1]
-    return " " + digits_to_en(match[0]) + (" " if after.isascii() and after.isalpha() else "")
+def _major_and_minor(major: int, minor: int, major_units: tuple[str, str], minor_units: tuple[str, str]) -> str:
+    parts = []
+    if major:
+        parts.append(f"{_cardinal(major)} {major_units[major != 1]}")
+    if minor or not major:
+        parts.append(f"{_cardinal(minor)} {minor_units[minor != 1]}")
+    return " and ".join(parts)
+
+
+def _ordinal(match: re.Match) -> str:
+    value = int(match["ord_num"])
+    expected = "th" if 10 <= value % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(value % 10, "th")
+    # A suffix that does not fit the number (`1th`) is not an ordinal we can read.
+    if match["ord_suffix"].lower() != expected:
+        return match[0]
+    return num2words(value, to="ordinal").replace(",", "")
 
 
 _RULES = {
@@ -150,7 +206,8 @@ _RULES = {
     # character stays behind glues English number words onto raw 年/室
     # ("twenty twenty-six年") -- worse than the written form it replaced.
     "room_cjk": lambda match: match[0],
-    "alnum": _alnum,
+    "ordinal": _ordinal,
+    "alnum": lambda match: digits_to_en(match[0]),
     "code": _code,
     "year": lambda match: match[0],
     "decimal": lambda match: _amount_to_en(match[0]),

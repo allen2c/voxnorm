@@ -40,6 +40,9 @@ _MULTIPLIERS = {"千": "千", "천": "千", "萬": "萬", "万": "萬", "만": "
 """A currency amount's written multiplier, spoken in Traditional glyphs (the
 zh-CN verbaliser re-spells them)."""
 
+_MAGNITUDES = frozenset("百千萬万億亿兆")
+"""Characters after which a written 2 is a count of that magnitude (兩萬)."""
+
 
 def verbalize(kind: str, match: re.Match) -> str:
     """Spell the token `match` of class `kind` the way zh-TW says it."""
@@ -157,6 +160,15 @@ def _currency(match: re.Match) -> str:
     return f"{prefix}{currency_amount_to_zh(match)}{suffix}"
 
 
+def _bare_int(match: re.Match) -> str:
+    # A lone 2 written before a magnitude character is a count of hundreds,
+    # thousands, ten-thousands: 兩百, 兩千, 兩萬 -- never 二萬. (The Simplified
+    # 万/亿 are here because cn.py speaks through this module.)
+    if match[0] == "2" and match.string[match.end() : match.end() + 1] in _MAGNITUDES:
+        return "兩"
+    return _spoken_int(match[0])
+
+
 def _phone(match: re.Match) -> str:
     # Parentheses and separators drop out; the `+` and an extension mark do not.
     spoken = ("加" if match["phone_plus"] else "") + digits_to_zh(match["phone_num"])
@@ -166,6 +178,7 @@ def _phone(match: re.Match) -> str:
 _RULES = {
     "markup": lambda match: match[0],
     "url_or_email": lambda match: match[0],
+    "ordinal": lambda match: match[0],
     "time": _time,
     "iso_date": _iso_date,
     "phone": _phone,
@@ -179,5 +192,5 @@ _RULES = {
     "year": lambda match: digits_to_zh(match[0]) if match.string[match.end()] == "年" else match[0],
     "decimal": lambda match: amount_to_zh(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),
-    "bare_int": lambda match: _spoken_int(match[0]),
+    "bare_int": _bare_int,
 }

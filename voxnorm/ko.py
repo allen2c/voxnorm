@@ -83,8 +83,9 @@ def _amount_to_ko(amount: str) -> str:
     integer, _, fraction = amount.replace(",", "").partition(".")
     spoken = _spoken_int(integer)
     # Unspaced around 점: the decimal reading is written as one clump
-    # (삼점일사), unlike the counter nouns 시/분/원 that take a space.
-    return f"{spoken}점{digits_to_ko(fraction)}" if fraction else spoken
+    # (삼점일사), unlike the counter nouns 시/분/원 that take a space. Zero
+    # after the point is 영 (영점영오); 공 is the phone-number zero.
+    return f"{spoken}점{digits_to_ko(fraction).replace('공', '영')}" if fraction else spoken
 
 
 def _phone(match: re.Match) -> str:
@@ -107,6 +108,7 @@ def _digit_groups(written: str) -> str:
 _RULES = {
     "markup": lambda match: match[0],
     "url_or_email": lambda match: match[0],
+    "ordinal": lambda match: match[0],
     "time": _time,
     "iso_date": _iso_date,
     "phone": _phone,

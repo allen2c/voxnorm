@@ -477,5 +477,26 @@ def test_structural_lookalikes(text: str, spoken: str) -> None:
     assert normalize(text, lang="zh") == spoken
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # A lone 2 before a magnitude character is a count of it: 兩.
+        ("2萬人", "兩萬人"),
+        ("2千元", "兩千元"),
+        ("2百", "兩百"),
+        ("2億", "兩億"),
+        # Elsewhere a lone 2 keeps 二 (before a measure word is planned for 0.3.0).
+        ("第2名", "第二名"),
+        ("12萬", "十二萬"),
+    ],
+)
+def test_two_before_a_magnitude_reads_liang(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+def test_ordinal_suffix_stays_written_in_chinese() -> None:
+    assert normalize("第1st名", lang="zh") == "第1st名"
+
+
 def test_amount_keeps_the_comma_after_it() -> None:
     assert normalize("$5, $6", lang="zh") == "五元, 六元"
