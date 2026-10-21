@@ -37,5 +37,5 @@ def verbalize(kind: str, match: re.Match) -> str:
     """Spell the token `match` of class `kind` the way zh-CN says it."""
     if kind == "currency" and match["cur_sym"] == "¥":
         # In the mainland locale ¥ is renminbi (元), not the yen zh-TW reads.
-        return f"{zh.amount_to_zh(match['cur_amt']).translate(_TO_SIMPLIFIED)}元"
+        return f"{zh.currency_amount_to_zh(match).translate(_TO_SIMPLIFIED)}元"
     return zh.verbalize(kind, match).translate(_TO_SIMPLIFIED)

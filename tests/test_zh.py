@@ -401,5 +401,23 @@ def test_joined_forms_stay_whole(text: str) -> None:
     assert normalize(text, lang="zh") == text
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # The symbol already speaks the unit; a written 元 after it is not doubled.
+        ("NT$12,800元", "新台幣一萬兩千八百元"),
+        ("NT$1,200 元", "新台幣一千兩百元"),
+        # A multiplier after the amount belongs to it; the unit goes last.
+        ("NT$3.5萬", "新台幣三點五萬元"),
+        ("$2千元", "兩千元"),
+        # Exactly 2 of a currency is a count of money: 兩.
+        ("$2", "兩元"),
+        ("NT$2萬", "新台幣兩萬元"),
+    ],
+)
+def test_currency_unit_and_multiplier(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
 def test_amount_keeps_the_comma_after_it() -> None:
     assert normalize("$5, $6", lang="zh") == "五元, 六元"

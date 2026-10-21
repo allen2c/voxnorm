@@ -80,6 +80,10 @@ def test_code_words() -> None:
     assert normalize("会員番号1234です", code_words=["会員番号"]) == "会員番号一二三四です"
 
 
+def test_currency_multiplier() -> None:
+    assert normalize("¥3.5万", lang="ja") == "三点五万円"
+
+
 def test_phone_shapes() -> None:
     assert normalize("(03)1234-5678#12", lang="ja") == "〇三一二三四五六七八内線一二"
     assert normalize("+81-3-1234-5678", lang="ja") == "プラス八一三一二三四五六七八"

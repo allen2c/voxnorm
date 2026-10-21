@@ -30,6 +30,9 @@ _CURRENCIES = {
 }
 """Spoken after the amount -- Japanese puts every currency word last."""
 
+_MULTIPLIERS = {"千": "千", "천": "千", "萬": "万", "万": "万", "만": "万", "億": "億", "亿": "億", "억": "億"}
+"""A CJK multiplier written after a currency amount, in Japanese glyphs."""
+
 
 def verbalize(kind: str, match: re.Match) -> str:
     """Spell the token `match` of class `kind` the way Japanese says it."""
@@ -86,7 +89,9 @@ _RULES = {
     "time": _time,
     "iso_date": _iso_date,
     "phone": _phone,
-    "currency": lambda match: f"{_amount_to_ja(match['cur_amt'])}{_CURRENCIES[match['cur_sym']]}",
+    "currency": lambda match: (
+        f"{_amount_to_ja(match['cur_amt'])}{_MULTIPLIERS.get(match['cur_mult'], '')}{_CURRENCIES[match['cur_sym']]}"
+    ),
     "percent": lambda match: f"{_amount_to_ja(match['pct_num'])}パーセント",
     "room_en": lambda match: f"{match['room_word']} {digits_to_ja(match['room_num'])}",
     "room_cjk": lambda match: digits_to_ja(match[0]),

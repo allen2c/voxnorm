@@ -8,6 +8,7 @@ Those readings live here.
 """
 
 import re
+from decimal import Decimal
 
 from num2words import num2words
 
@@ -41,6 +42,18 @@ _CURRENCIES = {
 }
 """(singular, plural) spoken after the amount. A bare `$` reads as plain
 dollars; the text saying which kind is the text's job, not a guess."""
+
+_MULTIPLIERS = {
+    "千": 1_000,
+    "천": 1_000,
+    "萬": 10_000,
+    "万": 10_000,
+    "만": 10_000,
+    "億": 100_000_000,
+    "亿": 100_000_000,
+    "억": 100_000_000,
+}
+"""A CJK multiplier written after a currency amount, as the factor to apply."""
 
 
 def verbalize(kind: str, match: re.Match) -> str:
@@ -106,9 +119,13 @@ def _amount_to_en(amount: str) -> str:
 
 
 def _currency(match: re.Match) -> str:
-    amount = match["cur_amt"]
+    amount = match["cur_amt"].replace(",", "")
+    if match["cur_mult"]:
+        # English has no 萬: multiply out (`NT$3.5萬` is thirty-five thousand).
+        value = Decimal(amount) * _MULTIPLIERS[match["cur_mult"]]
+        amount = str(int(value)) if value == value.to_integral_value() else format(value.normalize(), "f")
     singular, plural = _CURRENCIES[match["cur_sym"]]
-    unit = singular if amount.replace(",", "") == "1" else plural
+    unit = singular if amount == "1" else plural
     return f"{_amount_to_en(amount)} {unit}"
 
 

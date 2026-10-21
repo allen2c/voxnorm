@@ -152,6 +152,18 @@ def test_joined_forms_stay_whole(text: str) -> None:
     assert normalize(text) == text
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # English has no 萬: the multiplier is multiplied out, the 元 dropped.
+        ("NT$3.5萬", "thirty-five thousand NT dollars"),
+        ("NT$1,200元", "one thousand, two hundred NT dollars"),
+    ],
+)
+def test_currency_multiplier_and_unit(text: str, spoken: str) -> None:
+    assert normalize(text, lang="en") == spoken
+
+
 def test_markup_passes_through() -> None:
     text = 'wait <break time="500ms"/> then <emphasis>12</emphasis>'
     assert normalize(text) == 'wait <break time="500ms"/> then <emphasis>twelve</emphasis>'

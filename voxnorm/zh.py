@@ -36,6 +36,10 @@ _CURRENCIES = {
 """(prefix, suffix) around the spoken amount. A bare `$` reads as 元: in this
 package's home locale a bill is in NTD unless the text says otherwise."""
 
+_MULTIPLIERS = {"千": "千", "천": "千", "萬": "萬", "万": "萬", "만": "萬", "億": "億", "亿": "億", "억": "億"}
+"""A currency amount's written multiplier, spoken in Traditional glyphs (the
+zh-CN verbaliser re-spells them)."""
+
 
 def verbalize(kind: str, match: re.Match) -> str:
     """Spell the token `match` of class `kind` the way zh-TW says it."""
@@ -137,9 +141,20 @@ def amount_to_zh(amount: str) -> str:
     return f"{spoken}點{digits_to_zh(fraction)}" if fraction else spoken
 
 
+def currency_amount_to_zh(match: re.Match) -> str:
+    """The amount of a `currency` match, multiplier included: `3.5萬` -> 三點五萬.
+
+    An amount of exactly 2 is a count of money, so it reads 兩 (兩元, 兩萬元),
+    never the 二 a bare digit string would take.
+    """
+    amount = match["cur_amt"]
+    spoken = "兩" if amount == "2" else amount_to_zh(amount)
+    return spoken + _MULTIPLIERS.get(match["cur_mult"], "")
+
+
 def _currency(match: re.Match) -> str:
     prefix, suffix = _CURRENCIES[match["cur_sym"]]
-    return f"{prefix}{amount_to_zh(match['cur_amt'])}{suffix}"
+    return f"{prefix}{currency_amount_to_zh(match)}{suffix}"
 
 
 def _phone(match: re.Match) -> str:

@@ -92,7 +92,7 @@ TOKEN_PATTERN = re.compile(
         (?:\ ?[\#轉](?P<phone_ext>\d{{1,6}}))?
         (?![\d-])
       )
-    | (?P<currency>{_STARTS_CLEAN}(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>{_AMOUNT}){_ENDS_CLEAN})
+    | (?P<currency>{_STARTS_CLEAN}(?P<cur_sym>NT\$|US\$|USD|NTD|\$|€|¥|£|₩)\ ?(?P<cur_amt>{_AMOUNT})(?P<cur_mult>[千萬万億亿천만억])?(?![千萬万億亿천만억])(?:\ ?元)?{_ENDS_CLEAN})
     | (?P<percent>{_STARTS_CLEAN}(?P<pct_num>{_AMOUNT})\ ?%)
     | (?P<room_en>(?P<room_word>\b[Rr]oom|\b[Ee]xt\.?|房號|分機)\ ?\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
     | (?P<alnum>(?:(?<=[A-Za-z])|(?<=[*＊●•]{{3}}))\d+{_ENDS_CLEAN})
@@ -133,7 +133,14 @@ TOKEN_PATTERN = re.compile(
   or `+` it is the same string as the year range `1990-2000`, so it stays
   written unless the caller's `code_words` license it. A separator-less
   `0912345678` is caught by `bare_int`'s leading-zero rule instead.
-- `currency` — symbol before amount, the only order this package reads.
+- `currency` — symbol before amount, the only order this package reads. A
+  multiplier written after the amount (`cur_mult`: 千, 萬/万, 億/亿, and
+  Korean 천/만/억) belongs to it (`NT$3.5萬`, `₩3만`), and a 元 after that is
+  the unit the symbol already speaks, so it is consumed rather than doubled
+  (`NT$12,800元` is one 元). A compound amount (`NT$1萬2千`) is not read: the
+  amount may not stop in front of a second multiplier, which would put the
+  unit in the middle (一元萬二千), so the symbol and its first part stay
+  written.
 - `room_en` / `room_cjk` — a digit string read digit by digit, licensed by an
   explicit context word. The CJK suffix (Traditional 號, Japanese 号/室,
   Korean 호) stays outside the match (lookahead) so `302號房` keeps its 號房;

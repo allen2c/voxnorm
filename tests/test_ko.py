@@ -77,6 +77,10 @@ def test_code_words() -> None:
     assert normalize("계좌 1234 입니다", code_words=["계좌"]) == "계좌 일이삼사 입니다"
 
 
+def test_currency_multiplier() -> None:
+    assert normalize("₩3만", lang="ko") == "삼만 원"
+
+
 def test_phone_shapes() -> None:
     assert normalize("(02)1234-5678#12", lang="ko") == "공이 일이삼사 오육칠팔 내선 일이"
     assert normalize("+82-2-1234-5678", lang="ko") == "플러스 팔이 이 일이삼사 오육칠팔"
