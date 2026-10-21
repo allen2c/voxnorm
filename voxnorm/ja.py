@@ -74,10 +74,17 @@ def _amount_to_ja(amount: str) -> str:
     return f"{spoken}点{digits_to_ja(fraction)}" if fraction else spoken
 
 
+def _phone(match: re.Match) -> str:
+    # Parentheses and separators drop out; the `+` and an extension (内線) do not.
+    spoken = ("プラス" if match["phone_plus"] else "") + digits_to_ja(match["phone_num"])
+    return f"{spoken}内線{digits_to_ja(match['phone_ext'])}" if match["phone_ext"] else spoken
+
+
 _RULES = {
+    "markup": lambda match: match[0],
     "time": _time,
     "iso_date": _iso_date,
-    "phone": lambda match: digits_to_ja(match[0]),
+    "phone": _phone,
     "currency": lambda match: f"{_amount_to_ja(match['cur_amt'])}{_CURRENCIES[match['cur_sym']]}",
     "percent": lambda match: f"{_amount_to_ja(match['pct_num'])}パーセント",
     "room_en": lambda match: f"{match['room_word']} {digits_to_ja(match['room_num'])}",

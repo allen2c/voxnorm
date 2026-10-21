@@ -112,3 +112,29 @@ def test_hyphen_forms_stay_written(text: str) -> None:
 
 def test_code_words() -> None:
     assert normalize("plate 4820 is overdue", code_words=["plate"]) == "plate four eight two zero is overdue"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("call (02)8979-8888", "call zero two, eight nine seven nine, eight eight eight eight"),
+        ("call (02) 412-8878", "call zero two, four one two, eight eight seven eight"),
+        (
+            "call 02-8979-8888#123",
+            "call zero two, eight nine seven nine, eight eight eight eight, extension one two three",
+        ),
+        ("call +886 912 345 678", "call plus eight eight six, nine one two, three four five, six seven eight"),
+        ("call +886912345678", "call plus eight eight six nine one two three four five six seven eight"),
+    ],
+)
+def test_phone_shapes(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+def test_code_words_keep_hyphen_group_pauses() -> None:
+    assert normalize("dial 8979-8888", code_words=["dial"]) == "dial eight nine seven nine, eight eight eight eight"
+
+
+def test_markup_passes_through() -> None:
+    text = 'wait <break time="500ms"/> then <emphasis>12</emphasis>'
+    assert normalize(text) == 'wait <break time="500ms"/> then <emphasis>twelve</emphasis>'

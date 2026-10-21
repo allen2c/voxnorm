@@ -25,6 +25,7 @@ _TO_SIMPLIFIED = str.maketrans(
         "鎊": "镑",
         "韓": "韩",
         "圓": "元",
+        "轉": "转",
     }
 )
 """Every character the zh verbaliser can emit that differs in Simplified

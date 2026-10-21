@@ -241,3 +241,114 @@ def test_hyphen_forms_stay_written(text: str) -> None:
 )
 def test_code_words(text: str, code_words: list[str], spoken: str) -> None:
     assert normalize(text, code_words=code_words) == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # A leading-zero area code in parentheses is a phone; the parentheses drop.
+        ("撥打(02)8979-8888", "撥打零二八九七九八八八八"),
+        ("撥打(02)412-8878", "撥打零二四一二八八七八"),
+        ("撥打(02) 8979-8888", "撥打零二八九七九八八八八"),
+        ("撥打（02）8979-8888", "撥打零二八九七九八八八八"),
+        ("撥打(049)2345678", "撥打零四九二三四五六七八"),
+        # One 6-8 digit group after the lead zero.
+        ("手機0912-345678", "手機零九一二三四五六七八"),
+        ("市話02-89798888", "市話零二八九七九八八八八"),
+        ("免付費0800-092-000", "免付費零八零零零九二零零零"),
+        # `#` or 轉 directly after the number is its extension.
+        ("02-8979-8888#123", "零二八九七九八八八八轉一二三"),
+        ("02-8979-8888轉123", "零二八九七九八八八八轉一二三"),
+        # A `+` country code is spoken.
+        ("+886-2-8979-8888", "加八八六二八九七九八八八八"),
+        ("+886 912 345 678", "加八八六九一二三四五六七八"),
+        ("+886912345678", "加八八六九一二三四五六七八"),
+    ],
+)
+def test_phone_shapes(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # Without a lead zero, parentheses or `+`, a 4-4 group is the same
+        # string as a year range: it stays written unless code_words license it.
+        "撥打 8979-8888",
+        "1990-2000年",
+        "2025~2026年",
+        "B1-302室",
+        # A lead zero with too few digits after it is a date or a range.
+        "01-05",
+        "09-12",
+    ],
+)
+def test_ambiguous_hyphen_forms_stay_written(text: str) -> None:
+    assert normalize(text, lang="zh") == text
+
+
+@pytest.mark.parametrize(
+    ("text", "code_words", "spoken"),
+    [
+        # A code word licenses a hyphen form the scanner alone leaves written.
+        ("撥打 8979-8888", ["撥打"], "撥打 八九七九八八八八"),
+        # A long run is a quantity unless the caller names it a code.
+        ("交易序號是20261016008。", ["序號是"], "交易序號是二零二六一零一六零零八。"),
+    ],
+)
+def test_code_words_license_hyphen_forms_and_long_runs(text: str, code_words: list[str], spoken: str) -> None:
+    assert normalize(text, code_words=code_words) == spoken
+
+
+def test_long_digit_run_stays_a_quantity_without_code_words() -> None:
+    # No length threshold: an ungrouped 1500000000元 budget is a quantity too.
+    assert normalize("預算1500000000元") == "預算十五億元"
+    assert normalize("交易序號是20261016008") == "交易序號是兩百零二億六千一百零一萬六千零八"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("卡號****1234", "卡號****一二三四"),
+        ("帳號●●●●5678", "帳號●●●●五六七八"),
+        # Markdown bold is two stars around a quantity, not a mask.
+        ("**12**", "**十二**"),
+    ],
+)
+def test_masked_tails_read_as_code(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # Bracket and angle-bracket tags pass untouched; text between tags converts.
+        ("[故作輕鬆]您好，共12元", "[故作輕鬆]您好，共十二元"),
+        ("<emphasis>12</emphasis>點", "<emphasis>十二</emphasis>點"),
+        ('請稍候<break time="500ms"/>再撥', '請稍候<break time="500ms"/>再撥'),
+        ('<prosody rate="1.2">共3件</prosody>', '<prosody rate="1.2">共三件</prosody>'),
+        # A bare `<` is text, not a tag.
+        ("若x<5則", "若x<五則"),
+    ],
+)
+def test_markup_passes_through(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
+def test_customer_service_sentence() -> None:
+    # The edge-tts-playground report, verbatim. The email stays whole; the
+    # serial stays a quantity here (see the code_words test above).
+    text = (
+        "您好，這裡是AI智能服務，您的身分證字號是A123456789，登記的手機號碼是0912345678，"
+        "email信箱是a12345.lee@capital.com.tw。本次交易金額為新臺幣12345元，交易序號是20261016008。"
+        "系統已發送 OTP 驗證碼，請確認您的Account狀態。如需進一步協助，請於早上8:00到下午5:00"
+        "撥打(02)412-8878或(02)8979-8888，謝謝。"
+    )
+    spoken = (
+        "您好，這裡是AI智能服務，您的身分證字號是A一二三四五六七八九，登記的手機號碼是零九一二三四五六七八，"
+        "email信箱是a12345.lee@capital.com.tw。本次交易金額為新臺幣一萬兩千三百四十五元，"
+        "交易序號是兩百零二億六千一百零一萬六千零八。"
+        "系統已發送 OTP 驗證碼，請確認您的Account狀態。如需進一步協助，請於早上八點到下午五點"
+        "撥打零二四一二八八七八或零二八九七九八八八八，謝謝。"
+    )
+    assert normalize(text) == spoken

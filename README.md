@@ -33,8 +33,11 @@ alone:
 Two layers, split where languages stop sharing:
 
 - **Detection is language-neutral** (`voxnorm/tokens.py`): one scanner finds
-  the spans — times, ISO dates, phone numbers, currency, percentages, room
-  numbers, letter-glued identifiers, decimals, integers — and names their kind.
+  the spans — times, ISO dates, phone numbers (with area codes in
+  parentheses, `+` country codes and `#`/轉 extensions), currency,
+  percentages, room numbers, letter-glued identifiers and masked tails,
+  decimals, integers — and names their kind. Angle-bracket markup
+  (`<break time="500ms"/>`) passes through untouched.
 - **Verbalisation is per-language** (`voxnorm/zh.py`, `cn.py`, `en.py`,
   `ja.py`, `ko.py`): a new language is a new module and one registry entry. English,
   Japanese and Korean ride on
@@ -76,13 +79,16 @@ the words that settle it:
 '請問您四八二零的車款繳了嗎?'
 >>> voxnorm.normalize("plate 4820 is overdue", code_words=["plate"])
 'plate four eight two zero is overdue'
+>>> voxnorm.normalize("請撥打 8979-8888，交易序號是20261016008。", code_words=["撥打", "序號是"])
+'請撥打 八九七九八八八八，交易序號是二零二六一零一六零零八。'
 ```
 
 Each word is matched literally, directly before the digit run (whitespace
 allowed) or directly after it; include any connective in the word itself
 (`末四碼是`, not `末四碼`). The words are per-call and per-language — the
-same API carries 車牌, `plate`, 会員番号 and 계좌 — and a run that touches a
-larger form (`電話0912-345-678`) still takes its structural reading.
+same API carries 車牌, `plate`, 会員番号 and 계좌. A word also licenses
+hyphen-joined groups (`8979-8888`), which without it stay written: the same
+string is the year range `1990-2000`.
 
 ## Why not an FST toolkit
 

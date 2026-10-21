@@ -75,3 +75,7 @@ def test_idempotent() -> None:
 
 def test_code_words() -> None:
     assert normalize("车牌4820", code_words=["车牌"]) == "车牌四八二零"
+
+
+def test_phone_extension_respells() -> None:
+    assert normalize("拨打(010)1234-5678#12", lang="zh-CN") == "拨打零一零一二三四五六七八转一二"

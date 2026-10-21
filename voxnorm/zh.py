@@ -142,10 +142,17 @@ def _currency(match: re.Match) -> str:
     return f"{prefix}{amount_to_zh(match['cur_amt'])}{suffix}"
 
 
+def _phone(match: re.Match) -> str:
+    # Parentheses and separators drop out; the `+` and an extension mark do not.
+    spoken = ("加" if match["phone_plus"] else "") + digits_to_zh(match["phone_num"])
+    return f"{spoken}轉{digits_to_zh(match['phone_ext'])}" if match["phone_ext"] else spoken
+
+
 _RULES = {
+    "markup": lambda match: match[0],
     "time": _time,
     "iso_date": _iso_date,
-    "phone": lambda match: digits_to_zh(match[0]),
+    "phone": _phone,
     "currency": _currency,
     "percent": lambda match: f"百分之{amount_to_zh(match['pct_num'])}",
     "room_en": lambda match: f"{match['room_word']} {digits_to_zh(match['room_num'])}",

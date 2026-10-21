@@ -56,7 +56,7 @@ from collections.abc import Iterable
 from voxnorm import cn, en, ja, ko, zh
 from voxnorm.tokens import TOKEN_KINDS, pattern_for
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] = ()) -> str:

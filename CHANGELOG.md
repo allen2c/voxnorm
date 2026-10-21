@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.2.1 — 2026-10-21
+
+- Phone shapes: a leading-zero area code in half- or full-width parentheses
+  (`(02)8979-8888`, `(02) 412-8878`, `（049）2345678`, parentheses dropped);
+  a leading-zero group plus one 6-8 digit group (`0912-345678`,
+  `02-89798888`); a `+` country code (`+886 912 345 678`,
+  `+886-2-8979-8888`, `+886912345678`, `+` spoken: 加 / plus / プラス /
+  플러스); and a `#` or 轉 extension directly after any phone (轉 / extension
+  / 内線 / 내선). `(02)8979-8888` used to read `(零二)` and leave the rest
+  written; `+886 912 345 678` read as four quantities.
+- `code_words` license hyphen-joined digit groups: `撥打 8979-8888` with
+  `code_words=["撥打"]` reads digit by digit (English and Korean keep a pause
+  per group). Without a word it stays written: `8979-8888` is the same
+  string as the year range `1990-2000`.
+- A digit tail after three or more mask characters (`****1234`,
+  `●●●●5678`) reads digit by digit. `**12**` (Markdown bold) is untouched.
+- Angle-bracket markup (`<break time="500ms"/>`, `<emphasis>`) passes through
+  untouched, digits in attributes included; text between tags converts.
+  New `markup` token kind.
+- Fix: `year` and `room_cjk` no longer start inside a hyphen or tilde form,
+  so `1990-2000年` stays whole instead of half-converting to
+  `1990-二零零零年`.
+- Long ungrouped digit runs (`交易序號是20261016008`) still read as a quantity;
+  there is no length threshold, by charter (`docs/charter.md`). Pass
+  `code_words=["序號是"]`.
+
 ## 0.2.0 — 2026-09-09
 
 - `normalize(text, code_words=[...])`: caller-supplied words that mark the

@@ -74,8 +74,20 @@ def _iso_date(match: re.Match) -> str:
 
 
 def _phone(match: re.Match) -> str:
-    groups = re.split(r"[-\ ]", match[0])
-    return ", ".join(digits_to_en(group) for group in groups)
+    spoken = _digit_groups(match["phone_num"])
+    if match["phone_plus"]:
+        spoken = f"plus {spoken}"
+    return f"{spoken}, extension {digits_to_en(match['phone_ext'])}" if match["phone_ext"] else spoken
+
+
+def _code(match: re.Match) -> str:
+    return f"{match['code_pre'] or ''}{_digit_groups(match['code_num'])}"
+
+
+def _digit_groups(written: str) -> str:
+    # Each written group is read digit by digit, a comma pause between groups;
+    # parentheses, `+` and separators drop out.
+    return ", ".join(digits_to_en(group) for group in re.findall(r"\d+", written))
 
 
 def _amount_to_en(amount: str) -> str:
@@ -107,6 +119,7 @@ def _alnum(match: re.Match) -> str:
 
 
 _RULES = {
+    "markup": lambda match: match[0],
     "time": _time,
     "iso_date": _iso_date,
     "phone": _phone,
@@ -119,7 +132,7 @@ _RULES = {
     # ("twenty twenty-six年") -- worse than the written form it replaced.
     "room_cjk": lambda match: match[0],
     "alnum": _alnum,
-    "code": lambda match: f"{match['code_pre'] or ''}{digits_to_en(match['code_num'])}",
+    "code": _code,
     "year": lambda match: match[0],
     "decimal": lambda match: _amount_to_en(match[0]),
     "comma_int": lambda match: _cardinal(int(match[0].replace(",", ""))),

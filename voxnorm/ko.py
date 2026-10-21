@@ -84,11 +84,24 @@ def _amount_to_ko(amount: str) -> str:
 
 
 def _phone(match: re.Match) -> str:
-    groups = re.split(r"[-\ ]", match[0])
-    return " ".join(digits_to_ko(group) for group in groups)
+    spoken = _digit_groups(match["phone_num"])
+    if match["phone_plus"]:
+        spoken = f"플러스 {spoken}"
+    return f"{spoken} 내선 {digits_to_ko(match['phone_ext'])}" if match["phone_ext"] else spoken
+
+
+def _code(match: re.Match) -> str:
+    return f"{match['code_pre'] or ''}{_digit_groups(match['code_num'])}"
+
+
+def _digit_groups(written: str) -> str:
+    # Each written group is read digit by digit, a space between groups;
+    # parentheses, `+` and separators drop out.
+    return " ".join(digits_to_ko(group) for group in re.findall(r"\d+", written))
 
 
 _RULES = {
+    "markup": lambda match: match[0],
     "time": _time,
     "iso_date": _iso_date,
     "phone": _phone,
@@ -97,7 +110,7 @@ _RULES = {
     "room_en": lambda match: f"{match['room_word']} {digits_to_ko(match['room_num'])}",
     "room_cjk": lambda match: digits_to_ko(match[0]),
     "alnum": lambda match: digits_to_ko(match[0]),
-    "code": lambda match: f"{match['code_pre'] or ''}{digits_to_ko(match['code_num'])}",
+    "code": _code,
     "year": lambda match: _sino(int(match[0])),
     "decimal": lambda match: _amount_to_ko(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),
