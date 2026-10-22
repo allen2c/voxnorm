@@ -53,7 +53,7 @@ shape alone settles the reading. Each finding is classed:
 | `percent-quadratic-backtracking` | `"1,"*10000` → 3.1 s; 40 KB → 25–50 s | linear; lookbehind `(?<![\d.,])` measured 0.003 s |
 | `comma-and-colon-block-numbers` | `價格12, 謝謝`, `I have 3, 4 apples`, `金額：1,200元`, `房號：1203` → all stay written | a `,` `:` `：` blocks only with a digit on its other side |
 | `code-words-string-split` | `code_words="b"` licenses every `b`; `"plate"` licenses p, l, a, t, e | `TypeError` on a `str` |
-| `phone-edges` | `02-8979-8888#1234567` → `…#一百二十三萬…`; `0912 345 678 999` half-converts; `(02) 2345 6789` → `(零二) 兩千…`; `+1 (800) 555-1234` → `+one (eight hundred)…`; `(02)8979-8888 轉 123` → `…轉 一百二十三` | whole phone or whole written |
+| `phone-edges` | `02-1234-5678#1234567` → `…#一百二十三萬…`; `0912 345 678 999` half-converts; `(02) 2345 6789` → `(零二) 兩千…`; `+1 (800) 555-1234` → `+one (eight hundred)…`; `(02)1234-5678 轉 123` → `…轉 一百二十三` | whole phone or whole written |
 
 ### Charter violations
 

@@ -117,11 +117,11 @@ def test_code_words() -> None:
 @pytest.mark.parametrize(
     ("text", "spoken"),
     [
-        ("call (02)8979-8888", "call zero two, eight nine seven nine, eight eight eight eight"),
-        ("call (02) 412-8878", "call zero two, four one two, eight eight seven eight"),
+        ("call (02)1234-5678", "call zero two, one two three four, five six seven eight"),
+        ("call (02) 123-4567", "call zero two, one two three, four five six seven"),
         (
-            "call 02-8979-8888#123",
-            "call zero two, eight nine seven nine, eight eight eight eight, extension one two three",
+            "call 02-1234-5678#123",
+            "call zero two, one two three four, five six seven eight, extension one two three",
         ),
         ("call +886 912 345 678", "call plus eight eight six, nine one two, three four five, six seven eight"),
         ("call +886912345678", "call plus eight eight six nine one two three four five six seven eight"),
@@ -149,7 +149,7 @@ def test_phone_edges(text: str, spoken: str) -> None:
 
 
 def test_code_words_keep_hyphen_group_pauses() -> None:
-    assert normalize("dial 8979-8888", code_words=["dial"]) == "dial eight nine seven nine, eight eight eight eight"
+    assert normalize("dial 1234-5678", code_words=["dial"]) == "dial one two three four, five six seven eight"
 
 
 @pytest.mark.parametrize(

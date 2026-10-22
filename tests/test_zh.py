@@ -247,20 +247,20 @@ def test_code_words(text: str, code_words: list[str], spoken: str) -> None:
     ("text", "spoken"),
     [
         # A leading-zero area code in parentheses is a phone; the parentheses drop.
-        ("撥打(02)8979-8888", "撥打零二八九七九八八八八"),
-        ("撥打(02)412-8878", "撥打零二四一二八八七八"),
-        ("撥打(02) 8979-8888", "撥打零二八九七九八八八八"),
-        ("撥打（02）8979-8888", "撥打零二八九七九八八八八"),
+        ("撥打(02)1234-5678", "撥打零二一二三四五六七八"),
+        ("撥打(02)123-4567", "撥打零二一二三四五六七"),
+        ("撥打(02) 1234-5678", "撥打零二一二三四五六七八"),
+        ("撥打（02）1234-5678", "撥打零二一二三四五六七八"),
         ("撥打(049)2345678", "撥打零四九二三四五六七八"),
         # One 6-8 digit group after the lead zero.
         ("手機0912-345678", "手機零九一二三四五六七八"),
-        ("市話02-89798888", "市話零二八九七九八八八八"),
+        ("市話02-12345678", "市話零二一二三四五六七八"),
         ("免付費0800-092-000", "免付費零八零零零九二零零零"),
         # `#` or 轉 directly after the number is its extension.
-        ("02-8979-8888#123", "零二八九七九八八八八轉一二三"),
-        ("02-8979-8888轉123", "零二八九七九八八八八轉一二三"),
+        ("02-1234-5678#123", "零二一二三四五六七八轉一二三"),
+        ("02-1234-5678轉123", "零二一二三四五六七八轉一二三"),
         # A `+` country code is spoken.
-        ("+886-2-8979-8888", "加八八六二八九七九八八八八"),
+        ("+886-2-1234-5678", "加八八六二一二三四五六七八"),
         ("+886 912 345 678", "加八八六九一二三四五六七八"),
         ("+886912345678", "加八八六九一二三四五六七八"),
     ],
@@ -273,18 +273,18 @@ def test_phone_shapes(text: str, spoken: str) -> None:
     ("text", "spoken"),
     [
         # Spaces around the extension mark; separator-less number with an extension.
-        ("(02)8979-8888 轉 123", "零二八九七九八八八八轉一二三"),
+        ("(02)1234-5678 轉 123", "零二一二三四五六七八轉一二三"),
         ("0912345678#12", "零九一二三四五六七八轉一二"),
         # Space-separated groups after a parenthesised area code.
         ("(02) 2345 6789", "零二二三四五六七八九"),
         # A parenthesised area code after a country code.
-        ("+886 (02) 8979-8888", "加八八六零二八九七九八八八八"),
+        ("+886 (02) 1234-5678", "加八八六零二一二三四五六七八"),
         # Three groups after the lead zero.
         ("0912 345 678 999", "零九一二三四五六七八九九九"),
         # A number after the phone, past a space, is its own token.
         ("0912-345-678 3點", "零九一二三四五六七八 三點"),
         # A code word yields the extension to the phone.
-        ("撥打 02-8979-8888#123", "撥打 零二八九七九八八八八轉一二三"),
+        ("撥打 02-1234-5678#123", "撥打 零二一二三四五六七八轉一二三"),
     ],
 )
 def test_phone_edges(text: str, spoken: str) -> None:
@@ -295,7 +295,7 @@ def test_phone_edges(text: str, spoken: str) -> None:
     "text",
     [
         # A too-long extension is not an extension: the whole form stays written.
-        "02-8979-8888#1234567",
+        "02-1234-5678#1234567",
         # A sign is not a country code.
         "+5分",
         "#3",
@@ -310,7 +310,7 @@ def test_phone_lookalikes_stay_written(text: str) -> None:
     [
         # Without a lead zero, parentheses or `+`, a 4-4 group is the same
         # string as a year range: it stays written unless code_words license it.
-        "撥打 8979-8888",
+        "撥打 1234-5678",
         "1990-2000年",
         "2025~2026年",
         "B1-302室",
@@ -327,9 +327,9 @@ def test_ambiguous_hyphen_forms_stay_written(text: str) -> None:
     ("text", "code_words", "spoken"),
     [
         # A code word licenses a hyphen form the scanner alone leaves written.
-        ("撥打 8979-8888", ["撥打"], "撥打 八九七九八八八八"),
+        ("撥打 1234-5678", ["撥打"], "撥打 一二三四五六七八"),
         # A long run is a quantity unless the caller names it a code.
-        ("交易序號是20261016008。", ["序號是"], "交易序號是二零二六一零一六零零八。"),
+        ("交易序號是12345678901。", ["序號是"], "交易序號是一二三四五六七八九零一。"),
     ],
 )
 def test_code_words_license_hyphen_forms_and_long_runs(text: str, code_words: list[str], spoken: str) -> None:
@@ -339,7 +339,7 @@ def test_code_words_license_hyphen_forms_and_long_runs(text: str, code_words: li
 def test_long_digit_run_stays_a_quantity_without_code_words() -> None:
     # No length threshold: an ungrouped 1500000000元 budget is a quantity too.
     assert normalize("預算1500000000元") == "預算十五億元"
-    assert normalize("交易序號是20261016008") == "交易序號是兩百零二億六千一百零一萬六千零八"
+    assert normalize("交易序號是12345678901") == "交易序號是一百二十三億四千五百六十七萬八千九百零一"
 
 
 @pytest.mark.parametrize(
@@ -415,16 +415,16 @@ def test_customer_service_sentence() -> None:
     # serial stays a quantity here (see the code_words test above).
     text = (
         "您好，這裡是AI智能服務，您的身分證字號是A123456789，登記的手機號碼是0912345678，"
-        "email信箱是a12345.user@example.com.tw。本次交易金額為新臺幣12345元，交易序號是20261016008。"
+        "email信箱是a12345.user@example.com.tw。本次交易金額為新臺幣12345元，交易序號是12345678901。"
         "系統已發送 OTP 驗證碼，請確認您的Account狀態。如需進一步協助，請於早上8:00到下午5:00"
-        "撥打(02)412-8878或(02)8979-8888，謝謝。"
+        "撥打(02)123-4567或(02)1234-5678，謝謝。"
     )
     spoken = (
         "您好，這裡是AI智能服務，您的身分證字號是A一二三四五六七八九，登記的手機號碼是零九一二三四五六七八，"
         "email信箱是a一二三四五 點 user，小老鼠，example 點 com 點 tw。本次交易金額為新臺幣一萬兩千三百四十五元，"
-        "交易序號是兩百零二億六千一百零一萬六千零八。"
+        "交易序號是一百二十三億四千五百六十七萬八千九百零一。"
         "系統已發送 OTP 驗證碼，請確認您的Account狀態。如需進一步協助，請於早上八點到下午五點"
-        "撥打零二四一二八八七八或零二八九七九八八八八，謝謝。"
+        "撥打零二一二三四五六七或零二一二三四五六七八，謝謝。"
     )
     assert normalize(text) == spoken
 

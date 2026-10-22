@@ -212,14 +212,14 @@ TOKEN_PATTERN = re.compile(
   a mark no quantity carries:
   - a leading-zero group and either two or three 3-4 digit groups
     (`0912-345-678`, `02-2345-6789`, `0800-092-000`, `0123 4567 8901 2345`)
-    or one 6-8 digit group (`0912-345678`, `02-89798888`); six digits
+    or one 6-8 digit group (`0912-345678`, `02-12345678`); six digits
     minimum after the lead keeps the dates and ranges `01-05`, `09-12` out;
   - a leading-zero area code in half- or full-width parentheses, then the
-    local number (`(02)8979-8888`, `(02) 412-8878`, `(02) 2345 6789`,
+    local number (`(02)1234-5678`, `(02) 123-4567`, `(02) 2345 6789`,
     `（049）2345678`); the parentheses drop out of speech;
   - a `+` country code (`phone_plus`, spoken) and either two to four more
     groups ending in 3-4 digits, the first of which may be a parenthesised
-    area code (`+886 912 345 678`, `+886-2-8979-8888`, `+1 (800) 555-1234`),
+    area code (`+886 912 345 678`, `+886-2-1234-5678`, `+1 (800) 555-1234`),
     or 8-15 unbroken digits (`+886912345678`); a signed `+5` or `+3 -2` has
     neither, and a `+` glued to a word (`a+1234`) is not a country code;
   - a North American number: a 2-9 area code, then 3 and 4 digits, joined
@@ -232,7 +232,7 @@ TOKEN_PATTERN = re.compile(
   Then optionally `#` or 轉 and 1-6 digits, spaces allowed around the mark,
   the extension (`phone_ext`). A longer extension or another hyphen group
   after the number leaves the whole form written. A
-  bare `8979-8888` is not a phone here: without the lead zero, parentheses
+  bare `1234-5678` is not a phone here: without the lead zero, parentheses
   or `+` it is the same string as the year range `1990-2000`, so it stays
   written unless the caller's `code_words` license it. A separator-less
   `0912345678` is caught by `bare_int`'s leading-zero rule instead.
@@ -311,7 +311,7 @@ def pattern_for(code_words: tuple[str, ...]) -> re.Pattern:
     (whitespace allowed) or directly before one reads as a code, digit by
     digit; the leading word is captured as `code_pre` and re-emitted, the
     trailing one stays outside the match (a lookahead). The run may be
-    hyphen-joined groups (`撥打 8979-8888`): the word settles a form the
+    hyphen-joined groups (`撥打 1234-5678`): the word settles a form the
     scanner alone must leave written, and languages that pause between
     groups still do. It must otherwise start and end clean, so a word
     never licenses half of `3.5` or `12:00`.

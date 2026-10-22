@@ -15,10 +15,10 @@ written, which is where it started.
 | Temperature | `25°C`, `-5°C`, `25℃` | a degree sign with C or F; a minus only with nothing before it |
 | Metric unit | `5kg`, `3.5 km`, `100m²`, `60km/h` | a closed list of symbols with one meaning |
 | Phone, North American | `800-555-1234`, `1-800-…`, `(800) 555-1234` | a 2-9 area code and hyphenated 3-3-4 groups |
-| Phone | `0912-345-678`, `02-89798888` | leading zero, then two 3-4 digit groups or one 6-8 digit group |
-| Phone, area code | `(02)8979-8888`, `（049）2345678` | leading zero inside parentheses |
+| Phone | `0912-345-678`, `02-12345678` | leading zero, then two 3-4 digit groups or one 6-8 digit group |
+| Phone, area code | `(02)1234-5678`, `（049）2345678` | leading zero inside parentheses |
 | Phone, international | `+886 912 345 678`, `+886912345678` | `+` and at least three groups, or 8-15 digits |
-| Phone extension | `02-8979-8888#123`, `…轉123` | `#`/轉 directly after a phone |
+| Phone extension | `02-1234-5678#123`, `…轉123` | `#`/轉 directly after a phone |
 | Currency | `NT$1,200`, `$3.5` | symbol before amount |
 | Percent | `3.5%` | literal `%` |
 | Room / extension | `302號`, `Room 12`, `分機 123`, `房號是1203` | anchored by a context word, a 是/為/colon allowed between |
@@ -55,7 +55,7 @@ other symbol (`&`, `%`, `#`, `~`, `+`), or glued to more text (a second
 - **Comma forms that are not thousands**: `3,4`, `3,50` (a European
   decimal), `1,5%`, `0,123`. A comma with a word or space after it is
   punctuation, so `12, 謝謝` and `3, 4 apples` convert.
-- **Long digit runs**: `20261016008` reads as a quantity. Length alone does
+- **Long digit runs**: `12345678901` reads as a quantity. Length alone does
   not make a code (an ungrouped `1500000000元` budget is a quantity), so
   there is no digit-count threshold; 序號 or 編號 before the run is
   vocabulary, which belongs to the caller.
@@ -76,13 +76,13 @@ own that list. The caller names the words:
 ```python
 normalize("車牌4820的車款已逾期12天。", code_words=["車牌"])
 normalize("請問您4820的車款繳了嗎?", code_words=["的車款"])
-normalize("交易序號是20261016008。", code_words=["序號是"])
-normalize("請撥打 8979-8888。", code_words=["撥打"])
+normalize("交易序號是12345678901。", code_words=["序號是"])
+normalize("請撥打 1234-5678。", code_words=["撥打"])
 ```
 
 Words are literal, directly before (whitespace allowed) or after the digit
 run; a connective belongs inside the word (`末四碼是`). The run may be
-hyphen-joined digit groups (`8979-8888`), which a word licenses as a code;
+hyphen-joined digit groups (`1234-5678`), which a word licenses as a code;
 any other joined form (`3.5`, `12:00`) keeps the run out.
 
 When a bug report asks for a new context word, the answer is `code_words`
