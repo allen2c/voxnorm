@@ -85,7 +85,10 @@ def test_year_before_hangul_suffix_stays_written() -> None:
 
 
 def test_url_and_markup_pass_through() -> None:
-    assert normalize('<break time="500ms"/> www.x.com/2 12', lang="ja") == '<break time="500ms"/> www.x.com/2 十二'
+    assert (
+        normalize('<break time="500ms"/> www.x.com/2 12', lang="ja")
+        == '<break time="500ms"/> www ドット x ドット com スラッシュ 二 十二'
+    )
 
 
 def test_time_ranges_and_twelve_hour_times() -> None:
@@ -106,3 +109,10 @@ def test_phone_shapes() -> None:
     assert normalize("(03)1234-5678#12", lang="ja") == "〇三一二三四五六七八内線一二"
     assert normalize("+81-3-1234-5678", lang="ja") == "プラス八一三一二三四五六七八"
     assert normalize("1-800-123-4567", lang="ja") == "一八〇〇一二三四五六七"
+
+
+def test_emails_read_piece_by_piece() -> None:
+    assert (
+        normalize("a12345.user@example.com.tw", lang="ja")
+        == "a一二三四五 ドット user、アットマーク、example ドット com ドット tw"
+    )

@@ -14,7 +14,7 @@ import re
 
 from num2words import num2words
 
-from voxnorm.tokens import clock_parts
+from voxnorm.tokens import clock_parts, speak_address
 
 _DIGITS = ("공", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구")
 
@@ -57,6 +57,20 @@ _UNIT_READINGS = {
 }
 """The Korean reading of each metric symbol the `unit` kind accepts, as a
 template around the spoken number (speed is 시속 in front)."""
+
+
+_ADDRESS_WORDS = {
+    ".": " 점 ",
+    "@": ", 골뱅이, ",
+    "/": " 슬래시 ",
+    "-": " 하이픈 ",
+    "_": " 언더바 ",
+    ":": " 콜론 ",
+    "?": " 물음표 ",
+    "=": " 이퀄 ",
+}
+"""The Korean name of each symbol in an email or URL: `@` is 골뱅이, with a
+pause either side as in zh."""
 
 
 def verbalize(kind: str, match: re.Match) -> str:
@@ -128,7 +142,7 @@ def _digit_groups(written: str) -> str:
 
 _RULES = {
     "markup": lambda match: match[0],
-    "url_or_email": lambda match: match[0],
+    "url_or_email": lambda match: speak_address(match, _ADDRESS_WORDS, digits_to_ko),
     "ordinal": lambda match: match[0],
     "time_range": _time_range,
     "time_12h": lambda match: _clock(*clock_parts(match[0])),

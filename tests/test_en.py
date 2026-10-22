@@ -164,7 +164,7 @@ def test_punctuation_after_numbers(text: str, spoken: str) -> None:
     assert normalize(text) == spoken
 
 
-@pytest.mark.parametrize("text", ["$10-20", "Room 12-3", "v1.2.3", "192.168.1.1:8080", "7-Eleven", "a12@x.com"])
+@pytest.mark.parametrize("text", ["$10-20", "Room 12-3", "v1.2.3", "192.168.1.1:8080", "7-Eleven", "a+12@x.com"])
 def test_joined_forms_stay_whole(text: str) -> None:
     assert normalize(text) == text
 
@@ -295,3 +295,15 @@ def test_code_word_glued_to_digits_gets_a_space() -> None:
 def test_markup_passes_through() -> None:
     text = 'wait <break time="500ms"/> then <emphasis>12</emphasis>'
     assert normalize(text) == 'wait <break time="500ms"/> then <emphasis>twelve</emphasis>'
+
+
+def test_emails_read_piece_by_piece() -> None:
+    assert (
+        normalize("a12345.user@example.com.tw", lang="en")
+        == "a one two three four five dot user at example dot com dot tw"
+    )
+
+
+def test_spoken_word_never_glues_to_an_at_sign() -> None:
+    # "five percent@x.com" would be an email on a second pass.
+    assert normalize("5%@x.com") == "five percent @x.com"

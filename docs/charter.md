@@ -26,10 +26,18 @@ written, which is where it started.
 | Masked tail | `****1234`, `●●●●5678` | three or more mask characters on the left |
 | Year | `2026年` | anchored by 年/년 |
 | Leading-zero run | `0912345678` | never a quantity |
+| Email, URL | `a12345.user@x.com.tw`, `https://www.x.com/help?id=12` | an `@` with a dotted domain, or `http(s)://` / `www.` |
 | Decimal, comma int, bare int | `3.5`, `1,200`, `12` | the residue |
 
 Markup is never text: an angle-bracket tag (`<break time="500ms"/>`) passes
 through untouched, digits in its attributes included.
+
+An email or URL reads piece by piece: Latin-letter runs as written (whether
+`user` is a word or two letters is the voice's call), digit runs digit by
+digit (an address holds no quantities), and each of `. @ / - _ : ? =` by
+its spoken name. The `http(s)://` scheme is dropped. An address holding any
+other symbol (`&`, `%`, `#`, `~`, `+`), or glued to more text (a second
+`@`, a digit separator), stays written whole.
 
 ## What stays written, and why
 

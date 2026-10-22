@@ -37,7 +37,7 @@ Two layers, split where languages stop sharing:
   slash dates, phone numbers (with area codes in parentheses, `+` country
   codes, `#`/轉 extensions and North American 3-3-4 numbers), currency,
   percentages, temperatures, metric units, room numbers, letter-glued
-  identifiers and masked tails,
+  identifiers and masked tails, emails and URLs,
   decimals, integers — and names their kind. Angle-bracket markup
   (`<break time="500ms"/>`) passes through untouched.
 - **Verbalisation is per-language** (`voxnorm/zh.py`, `cn.py`, `en.py`,

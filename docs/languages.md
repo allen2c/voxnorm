@@ -22,7 +22,10 @@ A currency multiplier is spoken before the unit (NT$3.5萬 → 新台幣三點�
 Twelve-hour times take 上午/下午 (12am is 凌晨十二點, 12pm 中午十二點), a
 time range reads 到 between its ends, a temperature is 攝氏/華氏 with 零下
 for a minus, and units use the Taiwan words (公斤, 公分, 公釐, 平方公尺;
-km/h is 時速…公里); 2 of a unit is 兩 (兩公斤).
+km/h is 時速…公里); 2 of a unit is 兩 (兩公斤). In an email or URL `@` is
+小老鼠 with a comma pause either side, `.` 點, `/` 斜線, `-` 減號, `_`
+底線, `:` 冒號, `?` 問號, `=` 等於 (`a12345.user@x.com` → a一二三四五 點
+user，小老鼠，x 點 com).
 
 ## cn (Simplified Chinese)
 
@@ -30,7 +33,8 @@ A re-spelling of `zh`'s output through one glyph table, not a second
 algorithm — the readings are the same language. Two entries are more than
 glyphs: 兆 → 万亿 (the mainland reading of 10^12), and `¥` means renminbi
 here, not the yen `zh` reads. Units are the third: the mainland says
-厘米, 毫米 and 平方米 where Taiwan says 公分, 公釐 and 平方公尺.
+厘米, 毫米 and 平方米 where Taiwan says 公分, 公釐 and 平方公尺. Address
+symbols are mainland words: `@` 艾特, `/` 斜杠, `-` 横杠, `_` 下划线.
 
 ## en
 
@@ -47,7 +51,9 @@ temperatures are "degrees Celsius/Fahrenheit" with "minus", and units take
 singular or plural words (one kilogram, sixty kilometers per hour). Under a forced `lang="en"` the CJK-anchored kinds (digits before
 號/室/年) stay written rather than gluing English words onto raw anchors.
 Cardinals keep num2words' British "and" (one hundred and one); the US
-variant is deferred until a caller asks.
+variant is deferred until a caller asks. Emails and URLs read "dot", "at",
+"slash", "dash", "underscore", "colon", "question mark", "equals"; a spoken
+word never touches a following `@`.
 
 ## ja
 
@@ -57,6 +63,8 @@ the era reading (令和八年). Digit codes use 〇; `:30` is 半; ¥ is 円.
 Twelve-hour times take 午前/午後, a range is から…まで, temperatures are
 摂氏/華氏 with マイナス, and units are katakana (キログラム, 時速…キロメートル). Kana
 pronunciation of the emitted kanji (四時 as よじ) is the TTS frontend's job.
+Address symbols are katakana (ドット, アットマーク with 、 pauses, スラッシュ,
+ハイフン, アンダーバー).
 
 ## ko
 
@@ -69,7 +77,8 @@ take a space. A year speaks only before 년; under a forced `lang="ko"` a
 `2026年` stays written (ja and zh mirror this for 年). Twelve-hour times
 take 오전/오후 before the native hour, a range is …부터 …까지, temperatures
 are 섭씨/화씨 with 영하, and units are spaced loanwords (오 킬로그램, 시속 …
-킬로미터).
+킬로미터). Address symbols: `@` 골뱅이 with comma pauses, `.` 점, `/` 슬래시,
+`-` 하이픈, `_` 언더바.
 
 ## Adding a language
 

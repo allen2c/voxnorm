@@ -11,7 +11,7 @@ close, and which belong to the caller?
 
 ```
 您好，這裡是AI智能服務，您的身分證字號是A123456789，登記的手機號碼是0912345678，
-email信箱是a12345.lee@capital.com.tw。本次交易金額為新臺幣12345元，交易序號是20261016008。
+email信箱是a12345.user@example.com.tw。本次交易金額為新臺幣12345元，交易序號是20261016008。
 系統已發送 OTP 驗證碼，請確認您的Account狀態。如需進一步協助，請於早上8:00到下午5:00
 撥打(02)412-8878或(02)8979-8888，謝謝。
 ```
@@ -45,7 +45,7 @@ can settle goes to `code_words`.
 | `ssml-attribute-digits` | `<break time="500ms"/>` → `五百ms` inside the tag | tag untouched | bug |
 | `year-range-half-conversion` | `1990-2000年` → `1990-二零零零年` | stays written | charter violation |
 
-Checked and fine: the email `a12345.lee@capital.com.tw` stays whole;
+Checked and fine: the email `a12345.user@example.com.tw` stays whole;
 `[故作輕鬆]` bracket tags pass through; `0800-092-000` already worked;
 `4111-1111-1111-1111` stays written.
 

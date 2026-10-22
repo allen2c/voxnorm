@@ -11,7 +11,7 @@ throughout, 台 not 臺.
 
 import re
 
-from voxnorm.tokens import clock_parts
+from voxnorm.tokens import clock_parts, speak_address
 
 _DIGITS = "零一二三四五六七八九"
 _SECTION_UNITS = ("", "十", "百", "千")
@@ -56,6 +56,20 @@ UNIT_READINGS = {
 }
 """The zh-TW reading of each metric symbol the `unit` kind accepts, as a
 template around the spoken number (speed is 時速 in front, not a suffix)."""
+
+ADDRESS_WORDS = {
+    ".": " 點 ",
+    "@": "，小老鼠，",
+    "/": " 斜線 ",
+    "-": " 減號 ",
+    "_": " 底線 ",
+    ":": " 冒號 ",
+    "?": " 問號 ",
+    "=": " 等於 ",
+}
+"""How a Taiwanese speaker names each symbol of an email or URL. `@` is
+小老鼠, with a pause either side: in a probe on a self-hosted voice, the
+address read this way stopped the derailing a literal `@` caused."""
 
 _MAGNITUDES = frozenset("百千萬万億亿兆")
 """Characters after which a written 2 is a count of that magnitude (兩萬)."""
@@ -233,7 +247,7 @@ def _room(match: re.Match) -> str:
 
 _RULES = {
     "markup": lambda match: match[0],
-    "url_or_email": lambda match: match[0],
+    "url_or_email": lambda match: speak_address(match, ADDRESS_WORDS, digits_to_zh),
     "ordinal": lambda match: match[0],
     "time_range": _time_range,
     "time_12h": lambda match: _clock(*clock_parts(match[0])),

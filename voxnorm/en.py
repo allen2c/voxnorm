@@ -12,7 +12,7 @@ from decimal import Decimal
 
 from num2words import num2words
 
-from voxnorm.tokens import clock_parts
+from voxnorm.tokens import clock_parts, speak_address
 
 _DIGIT_WORDS = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
 
@@ -71,6 +71,18 @@ _UNIT_WORDS = {
 }
 """(singular, plural) for each metric symbol the `unit` kind accepts."""
 
+_ADDRESS_WORDS = {
+    ".": " dot ",
+    "@": " at ",
+    "/": " slash ",
+    "-": " dash ",
+    "_": " underscore ",
+    ":": " colon ",
+    "?": " question mark ",
+    "=": " equals ",
+}
+"""The spoken name of each symbol in an email or URL."""
+
 _MINOR_UNITS = {
     "NT$": ("cent", "cents"),
     "NTD": ("cent", "cents"),
@@ -91,7 +103,9 @@ def verbalize(kind: str, match: re.Match) -> str:
     Spoken words never touch a Latin letter or digit of the surrounding text:
     `9:30am` is "nine thirty am", `A123` is "A one two three", `4K` is
     "four K". Glued, they would read wrong and re-scan differently on a second
-    pass (`5%483` -> "five percent483", whose 483 then looks letter-glued).
+    pass (`5%483` -> "five percent483", whose 483 then looks letter-glued;
+    `5%@x.com` -> "five percent@x.com", now an email). An `@` after a spoken
+    word gets the same gap.
     Chinese needs no such gap, so the other verbalisers do not pad.
     """
     spoken = _RULES[kind](match)
@@ -101,7 +115,7 @@ def verbalize(kind: str, match: re.Match) -> str:
     after = match.string[match.end() : match.end() + 1]
     if _is_latin_alnum(before) and not spoken.startswith(" "):
         spoken = " " + spoken
-    if _is_latin_alnum(after) and not spoken.endswith(" "):
+    if (_is_latin_alnum(after) or after == "@") and not spoken.endswith(" "):
         spoken += " "
     return spoken
 
@@ -231,7 +245,7 @@ def _ordinal(match: re.Match) -> str:
 
 _RULES = {
     "markup": lambda match: match[0],
-    "url_or_email": lambda match: match[0],
+    "url_or_email": lambda match: speak_address(match, _ADDRESS_WORDS, lambda digits: f" {digits_to_en(digits)} "),
     "time_range": _time_range,
     "time_12h": lambda match: _clock(*clock_parts(match[0])),
     "time": lambda match: _clock(int(match["time_h"]), int(match["time_m"])),

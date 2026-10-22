@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.0 — 2026-10-22
+
+Emails and URLs are spoken instead of passed through, in all five languages
+(requested by edge-tts-playground: a self-hosted voice derailed on literal
+addresses). On by default; no option.
+
+- `a12345.user@example.com.tw` → a一二三四五 點 user，小老鼠，example 點 com 點
+  tw (zh-CN 艾特, en "at", ja アットマーク, ko 골뱅이). Letter runs stay as
+  written, digit runs read digit by digit, `. @ / - _ : ? =` by name.
+- `https://www.example.com.tw/help?id=12` → www 點 example 點 com 點 tw 斜線
+  help 問號 id 等於 一二: the `http(s)://` scheme is dropped.
+- An address with any other symbol (`&`, `%`, `#`, `~`, `+`) stays written
+  whole, as does one glued to more text (`a@x.com.8@y.com`, `12:30@x.com`).
+- A URL no longer ends on sentence punctuation (`see www.x.com.`).
+- en: a spoken word is padded from a following `@` (`5%@x.com` → five
+  percent @x.com), so it never becomes an email's local part.
+
 ## 0.3.0 — 2026-10-21
 
 New structural forms from the 0.2.1 review

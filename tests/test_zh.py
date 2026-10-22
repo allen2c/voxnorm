@@ -371,18 +371,57 @@ def test_markup_passes_through(text: str, spoken: str) -> None:
     assert normalize(text, lang="zh") == spoken
 
 
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # The edge-tts-playground cases: letters as written, digits one by
+        # one, symbols by name, a pause either side of 小老鼠.
+        ("a12345.user@example.com.tw", "a一二三四五 點 user，小老鼠，example 點 com 點 tw"),
+        ("service-desk_01@example.com.tw", "service 減號 desk 底線 零一，小老鼠，example 點 com 點 tw"),
+        # The scheme is dropped; nobody reads it aloud.
+        (
+            "網址是https://www.example.com.tw/help?id=12",
+            "網址是www 點 example 點 com 點 tw 斜線 help 問號 id 等於 一二",
+        ),
+        ("網址是www.example.com.tw/help", "網址是www 點 example 點 com 點 tw 斜線 help"),
+        ("http://x.com:8080/", "x 點 com 冒號 八零八零 斜線"),
+        # Sentence punctuation after a URL belongs to the sentence.
+        ("請上www.x.com.tw。", "請上www 點 x 點 com 點 tw。"),
+        ("(見www.x.com)", "(見www 點 x 點 com)"),
+        ("see www.x.com.", "see www 點 x 點 com."),
+        # Any symbol without one spoken name keeps the whole address written.
+        ("www.x.com/a%20b", "www.x.com/a%20b"),
+        ("www.x.com/#top", "www.x.com/#top"),
+        # An address glued to more stays whole, digits and all, so a second
+        # pass sees the same string (each found by the idempotency fuzz).
+        ("12:30@x.com", "12:30@x.com"),
+        ("x:12@y.com", "x:12@y.com"),
+        ("A8,98@x.com", "A8,98@x.com"),
+        ("a@x.com.8@y.com", "a@x.com.8@y.com"),
+        ("a@x.com_@y.com", "a@x.com_@y.com"),
+        ("a12@x.com8$4", "a12@x.com8$4"),
+        ("a12@x.com0https://2", "a12@x.com0https://2"),
+        ("www.x.com/886：0912-345-678", "www.x.com/886：0912-345-678"),
+        # A digit before converts first; the address after it converts too.
+        ("59657a.b@x.com", "五九六五七a 點 b，小老鼠，x 點 com"),
+    ],
+)
+def test_emails_and_urls(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh") == spoken
+
+
 def test_customer_service_sentence() -> None:
-    # The edge-tts-playground report, verbatim. The email stays whole; the
+    # The edge-tts-playground report, verbatim. The email reads piece by piece; the
     # serial stays a quantity here (see the code_words test above).
     text = (
         "您好，這裡是AI智能服務，您的身分證字號是A123456789，登記的手機號碼是0912345678，"
-        "email信箱是a12345.lee@capital.com.tw。本次交易金額為新臺幣12345元，交易序號是20261016008。"
+        "email信箱是a12345.user@example.com.tw。本次交易金額為新臺幣12345元，交易序號是20261016008。"
         "系統已發送 OTP 驗證碼，請確認您的Account狀態。如需進一步協助，請於早上8:00到下午5:00"
         "撥打(02)412-8878或(02)8979-8888，謝謝。"
     )
     spoken = (
         "您好，這裡是AI智能服務，您的身分證字號是A一二三四五六七八九，登記的手機號碼是零九一二三四五六七八，"
-        "email信箱是a12345.lee@capital.com.tw。本次交易金額為新臺幣一萬兩千三百四十五元，"
+        "email信箱是a一二三四五 點 user，小老鼠，example 點 com 點 tw。本次交易金額為新臺幣一萬兩千三百四十五元，"
         "交易序號是兩百零二億六千一百零一萬六千零八。"
         "系統已發送 OTP 驗證碼，請確認您的Account狀態。如需進一步協助，請於早上八點到下午五點"
         "撥打零二四一二八八七八或零二八九七九八八八八，謝謝。"
@@ -462,9 +501,10 @@ def test_currency_unit_and_multiplier(text: str, spoken: str) -> None:
         ("解析度1920x1080", "解析度1920x1080"),
         # Markdown emphasis is not a mask, however many stars.
         ("***12***", "***十二***"),
-        # URLs and emails pass whole; the text around them converts.
+        # A URL or email with a symbol outside the named set passes whole;
+        # the text around it converts.
         ("詳見 https://x.com/a/2?id=5&p=10 共3頁", "詳見 https://x.com/a/2?id=5&p=10 共三頁"),
-        ("寄到 a12@b.com，共3份", "寄到 a12@b.com，共三份"),
+        ("寄到 a+12@b.com，共3份", "寄到 a+12@b.com，共三份"),
         ("檔名file_v2_12.txt", "檔名file_v2_12.txt"),
         # A tag needs a name and quoted attributes; comparisons stay text.
         ("若1<x且5>2", "若一<x且五>二"),

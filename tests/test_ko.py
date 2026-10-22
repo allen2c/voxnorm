@@ -88,7 +88,10 @@ def test_year_before_han_suffix_stays_written() -> None:
 
 
 def test_url_and_markup_pass_through() -> None:
-    assert normalize('<break time="500ms"/> www.x.com/2 12', lang="ko") == '<break time="500ms"/> www.x.com/2 십이'
+    assert (
+        normalize('<break time="500ms"/> www.x.com/2 12', lang="ko")
+        == '<break time="500ms"/> www 점 x 점 com 슬래시 이 십이'
+    )
 
 
 def test_time_ranges_and_twelve_hour_times() -> None:
@@ -113,3 +116,7 @@ def test_phone_shapes() -> None:
 
 def test_code_words_keep_hyphen_group_pauses() -> None:
     assert normalize("전화 1234-5678", code_words=["전화 "]) == "전화 일이삼사 오육칠팔"
+
+
+def test_emails_read_piece_by_piece() -> None:
+    assert normalize("a12345.user@example.com.tw", lang="ko") == "a일이삼사오 점 user, 골뱅이, example 점 com 점 tw"

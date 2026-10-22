@@ -6,9 +6,10 @@ Two layers, split where languages stop sharing.
 
 One compiled pattern, `TOKEN_PATTERN`, an alternation of named groups, one per
 token *kind* — the list and its priority order is `TOKEN_KINDS`, and the
-notes under `TOKEN_PATTERN` say what each kind accepts and why. Two kinds,
-`markup` and `url_or_email`, are matched only so they pass through
-untouched. The part groups inside it (`time_h`, `cur_amt`,
+notes under `TOKEN_PATTERN` say what each kind accepts and why. One kind,
+`markup`, is matched only so it passes through untouched; `url_or_email`
+is split by `address_parts` and spoken piece by piece through a per-language
+symbol table (`speak_address`). The part groups inside it (`time_h`, `cur_amt`,
 `room_num`) are what verbalisers read. Order in the alternation is priority:
 a clock time wins over the bare integers inside it, a phone number over the
 digit runs it is made of.

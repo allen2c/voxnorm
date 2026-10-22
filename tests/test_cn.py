@@ -80,7 +80,7 @@ def test_code_words() -> None:
 def test_url_and_markup_pass_through() -> None:
     assert (
         normalize('<break time="500ms"/> www.x.com/2 共12件', lang="zh-CN")
-        == '<break time="500ms"/> www.x.com/2 共十二件'
+        == '<break time="500ms"/> www 点 x 点 com 斜杠 二 共十二件'
     )
 
 
@@ -108,3 +108,7 @@ def test_currency_multiplier() -> None:
 
 def test_phone_extension_respells() -> None:
     assert normalize("拨打(010)1234-5678#12", lang="zh-CN") == "拨打零一零一二三四五六七八转一二"
+
+
+def test_emails_read_piece_by_piece() -> None:
+    assert normalize("a12345.user@example.com.tw", lang="zh-CN") == "a一二三四五 点 user，艾特，example 点 com 点 tw"

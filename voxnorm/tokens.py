@@ -34,6 +34,7 @@ anchors in as a `code` alternative ahead of everything else.
 """
 
 import re
+from collections.abc import Callable
 from functools import lru_cache
 
 TOKEN_KINDS = (
@@ -60,8 +61,13 @@ TOKEN_KINDS = (
 )
 """Every token kind a verbaliser must speak, in the scanner's priority order.
 `code` exists only in a `pattern_for(code_words)` pattern; the rest are the
-top-level groups of `TOKEN_PATTERN`. `markup` and `url_or_email` are matched only so
-that they are left alone: every verbaliser returns them unchanged."""
+top-level groups of `TOKEN_PATTERN`. `markup` is matched only so that it is left alone: every verbaliser
+returns it unchanged."""
+
+ADDRESS_SYMBOLS = frozenset(".@/-_:?=")
+"""The symbols `address_parts` lets through, each with one spoken name per
+language. An address holding any other (`&`, `%`, `#`, `~`, `+`) passes
+through whole rather than half-read."""
 
 _STARTS_CLEAN = r"(?<![\d\-+/.$€¥£₩\#_=])(?<!\d[,:：~～–xX×])"
 """A form may start here: no digit, sign, slash, point, currency symbol, `#`,
@@ -76,7 +82,7 @@ _ENDS_CLEAN = r"(?![\d\-~～–%@\#_+$€¥£₩=])(?!\.[\dA-Za-z])(?![,:：/xX�
 """A form may end here: no digit, hyphen, tilde, en-dash, `%`, `@`, `#` or `_`
 directly after it (`7-11`, `10~20`, `a12@x`, a phone's `#123` extension that
 a `code_words` run must leave to the phone, `v2_12`), no point with a digit
-or Latin letter after it (`1.2.3`, `a12345.lee@…`, `v2.txt`), and no comma,
+or Latin letter after it (`1.2.3`, `a12345.user@…`, `v2.txt`), and no comma,
 colon, slash or multiplication `x` with a digit after *that* (`3,4`,
 `12:00:05`, `1/2`, `1920x1080`). A point, comma or slash
 followed by anything else ends a sentence, a clause, or a per-unit price
@@ -96,6 +102,36 @@ _CLOCK_24H = r"(?:[01]?\d|2[0-3]):[0-5]\d"
 
 _CLOCK_PARTS = re.compile(r"(\d{1,2})(?::(\d\d))?\ ?(?:([AaPp])(?:\.[Mm]\.|[Mm]))?")
 
+_ADDRESS_STARTS = r"(?<![A-Za-z.\-+_@/:=~&\#])"
+"""An address starts on its own: not glued to a letter or address symbol on
+its left, so `12:30@x.com` has no `30@x.com` inside it and `comhttps://x`
+no URL. A digit on the left is allowed (the scanner reads `8` before it ever
+reaches `8https://…` or `8a@x.com`, so refusing the address would only defer
+it to a second pass). An email's local part starts and ends on a letter or digit
+and never after `%`, its own character; a leading digit starts clean like
+any digit form (`x:12@y.com` holds no `2@y.com`), and a leading `x` with a
+digit after it does not follow a digit (`9x71@y.com` is a product, as
+`1920x1080` is)."""
+
+_URL_CHAR = r"[A-Za-z0-9\-._~:/?\#\[\]@!$&'()*+,;=%]"
+_URL_LAST = r"[A-Za-z0-9\-_~/\#=&%+]"
+"""A URL is the longest run of URL characters, less any sentence punctuation
+(`.`, `,`, `)`, `!`, ...) at its end; the negative lookahead after it refuses
+any shorter run, so a URL never stops halfway through itself."""
+
+_ADDRESS_PIECE = re.compile(r"[A-Za-z]+|\d+|.")
+
+_URL_SCHEME = re.compile(r"https?://")
+
+_ADDRESS_GLUED = re.compile(r"[@_%+\-]|\.[\w%+\-]|:/", re.ASCII)
+"""What may not follow an address: `@` or a local-part character an email
+domain cannot hold (`a@x.com_@y.com`, `a@x.com%35`), a point and more
+(`a@x.com.8@y.com`), or a URL scheme's `://` an email domain stopped in
+front of (`a@x.com0https://…`). One character, never a scan: the run after
+it may itself convert, and a second pass must decide the same."""
+
+_ENDS_CLEAN_AT = re.compile(_ENDS_CLEAN)
+
 TOKEN_PATTERN = re.compile(
     rf"""
       (?P<markup>
@@ -104,8 +140,8 @@ TOKEN_PATTERN = re.compile(
       | <!--.*?-->
       )
     | (?P<url_or_email>
-        (?:https?://|www\.)[A-Za-z0-9\-._~:/?\#\[\]@!$&'()*+,;=%]+
-      | [A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)+
+        {_ADDRESS_STARTS}(?:https?://|www\.){_URL_CHAR}*{_URL_LAST}(?!{_URL_CHAR}*?{_URL_LAST})
+      | {_ADDRESS_STARTS}(?<!%)(?:(?=[A-Za-z])(?!(?<=\d)[xX]\d)|{_STARTS_CLEAN}(?=\d))[A-Za-z0-9](?:[A-Za-z0-9._%+\-]*[A-Za-z0-9])?@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)+(?<=[A-Za-z0-9])
       )
     | (?P<time_range>{_STARTS_CLEAN}(?P<range_from>{_CLOCK_12H}|{_CLOCK_24H})\ ?[-~～–]\ ?(?P<range_to>{_CLOCK_12H}|{_CLOCK_24H}){_ENDS_CLEAN})
     | (?P<time_12h>{_STARTS_CLEAN}{_CLOCK_12H}{_ENDS_CLEAN})
@@ -150,9 +186,12 @@ TOKEN_PATTERN = re.compile(
   digit inside an attribute is never rewritten; text between tags converts
   as usual. A tag is a name and quoted `name="value"` attributes only, so
   `x<5` and `1<x and 5>2` stay text.
-- `url_or_email` — a URL (`https://…`, `www.…`) or an email address,
-  returned unchanged: its digits are path, query and host parts
-  (`?id=5&p=10`, `a12345.lee@…`), not quantities.
+- `url_or_email` — a URL (`https://…`, `www.…`) or an email address. Its
+  digits are path, query and host parts (`?id=5&p=10`, `a12345.user@…`),
+  never quantities: verbalisers read the address piece by piece through
+  `address_parts`, or return it unchanged when that refuses it. A URL never
+  ends on sentence punctuation (`.`, `,`, `)`, `!`, ...), so
+  `see www.x.com.` leaves its full stop to the sentence.
 - `time_range` — two clock times, 24-hour or twelve-hour, joined by a
   hyphen, tilde or en-dash, spaces allowed (`8:00-17:00`, `9:00～18:00`,
   `9am-6pm`). A dash between two clock times is never a minus or a code, so
@@ -308,3 +347,45 @@ def clock_parts(written: str) -> tuple[int, int, str | None]:
     """
     hour, minute, mark = _CLOCK_PARTS.match(written).groups()
     return int(hour), int(minute or 0), mark and f"{mark.lower()}m"
+
+
+def address_parts(written: str) -> list[str] | None:
+    """Split a written `url_or_email` into the pieces a verbaliser speaks.
+
+    Pieces are Latin-letter runs, digit runs and single symbols:
+    `a12345.user@example.com.tw` -> a, 12345, ., user, @, example, ...
+    Letter runs are spoken as written (whether `user` is a word or two
+    letters is the voice's call, not a guess this package makes); digit
+    runs digit by digit; symbols by name. The `http://` / `https://` scheme
+    is dropped: nobody reads it aloud, and a listener types the rest.
+    Returns None when the address holds a symbol outside `ADDRESS_SYMBOLS`,
+    and the verbaliser then returns it unchanged.
+    """
+    pieces = _ADDRESS_PIECE.findall(_URL_SCHEME.sub("", written, count=1))
+    if any(len(piece) == 1 and not piece.isalnum() and piece not in ADDRESS_SYMBOLS for piece in pieces):
+        return None
+    return pieces
+
+
+def speak_address(match: re.Match, symbol_words: dict[str, str], read_digits: Callable[[str], str]) -> str:
+    """A `url_or_email` match spoken through one language's symbol names and digit reader.
+
+    Each symbol word carries its own spacing (` 點 `, `，小老鼠，`); runs of
+    spaces collapse to one and the ends are trimmed, so a reader may pad
+    freely. The address comes back unchanged when `address_parts` refuses
+    it, or when what follows joins it to more (`_ADDRESS_GLUED`; and for
+    an address ending on a digit, `_ENDS_CLEAN`, as for any digit form:
+    `x.com/886：0912-345-678` must not unblock the phone). That check sits here, not in the pattern: a pattern
+    refusing the address would leave its inner digits to the alternatives
+    after it (`x.com95A3～9` reading 95 as letter-glued digits), and a second
+    pass would see a different string.
+    """
+    written = match[0]
+    glued = _ADDRESS_GLUED.match(match.string, match.end()) or (
+        written[-1].isdigit() and not _ENDS_CLEAN_AT.match(match.string, match.end())
+    )
+    pieces = None if glued else address_parts(written)
+    if pieces is None:
+        return written
+    spoken = "".join(symbol_words.get(piece) or (read_digits(piece) if piece.isdigit() else piece) for piece in pieces)
+    return re.sub(" {2,}", " ", spoken).strip()

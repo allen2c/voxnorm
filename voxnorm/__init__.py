@@ -56,7 +56,7 @@ from collections.abc import Iterable
 from voxnorm import cn, en, ja, ko, zh
 from voxnorm.tokens import TOKEN_KINDS, pattern_for
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __all__ = ["__version__", "normalize"]
 
 _VERBALIZERS = {

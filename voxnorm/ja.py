@@ -15,7 +15,7 @@ import re
 
 from num2words import num2words
 
-from voxnorm.tokens import clock_parts
+from voxnorm.tokens import clock_parts, speak_address
 
 _DIGITS = "〇一二三四五六七八九"
 
@@ -49,6 +49,20 @@ _UNIT_READINGS = {
 }
 """The Japanese reading of each metric symbol the `unit` kind accepts, as a
 template around the spoken number (speed is 時速 in front)."""
+
+
+_ADDRESS_WORDS = {
+    ".": " ドット ",
+    "@": "、アットマーク、",
+    "/": " スラッシュ ",
+    "-": " ハイフン ",
+    "_": " アンダーバー ",
+    ":": " コロン ",
+    "?": " クエスチョン ",
+    "=": " イコール ",
+}
+"""The katakana name of each symbol in an email or URL, with a pause either
+side of `@` as in zh."""
 
 
 def verbalize(kind: str, match: re.Match) -> str:
@@ -113,7 +127,7 @@ def _room(match: re.Match) -> str:
 
 _RULES = {
     "markup": lambda match: match[0],
-    "url_or_email": lambda match: match[0],
+    "url_or_email": lambda match: speak_address(match, _ADDRESS_WORDS, digits_to_ja),
     "ordinal": lambda match: match[0],
     "time_range": _time_range,
     "time_12h": lambda match: _clock(*clock_parts(match[0])),

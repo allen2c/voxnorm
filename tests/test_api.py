@@ -100,7 +100,17 @@ def test_random_input_never_crashes_and_is_idempotent(lang: str) -> None:
     # A seeded fuzz over the characters the guards care about. A conversion
     # must not unblock a neighbour on a second pass. Compound currency
     # amounts (`NT$1萬2千`) are a documented residual and kept out.
-    pieces = [*"0123456789" * 4, *" .,:：-~～/%$#@*+xA年號室년元()<>=_", "NT$", "Room ", "12:30", "0912-345-678"]
+    pieces = [
+        *"0123456789" * 4,
+        *" .,:：-~～/%$#@*+xA年號室년元()<>=_",
+        "NT$",
+        "Room ",
+        "12:30",
+        "0912-345-678",
+        "www.",
+        "https://",
+        "@x.com",
+    ]
     generator = random.Random(7)
     for _ in range(2_000):
         text = "".join(generator.choice(pieces) for _ in range(generator.randint(1, 14)))
