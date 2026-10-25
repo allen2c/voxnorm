@@ -14,8 +14,11 @@ Three requests from a zh-TW voice-agent TTS round trip (TTS → ASR over a
 - New `codes=` argument: exact code values the caller already holds, read
   digit by digit wherever one stands as a whole digit run, no context word
   needed (`normalize("請問您4820的車款", codes=["4820"])` → 請問您四八二零的車款).
-  Digits only, hyphen-joined groups allowed; never matches inside a longer
-  run (`48200`, `4820-1`).
+  Digits, hyphen-joined groups allowed, optionally after Latin letters and a
+  hyphen (`BK-000456` → BK零零零四五六, letters as written); a value
+  matches only as a whole token, never inside a longer one (`48200`,
+  `4820-1`, `XBK-000456`). Letter-hyphen-digit forms (`F-16`) still never
+  convert without the caller naming them.
 
 ## 0.4.0 — 2026-10-22
 

@@ -100,10 +100,14 @@ from the case record — it can name those instead, with no word around them:
 ```python
 >>> voxnorm.normalize("請問您4820的車款繳了嗎?", codes=["4820"])
 '請問您四八二零的車款繳了嗎?'
+>>> voxnorm.normalize("預約編號BK-000456。", codes=["BK-000456"])
+'預約編號BK零零零四五六。'
 ```
 
-A value matches only a whole digit run (`4820` leaves `48200` and `4820-1`
-alone), but every such run, so pass values long enough to be the code.
+A value is digits, optionally after Latin letters and a hyphen; the letters
+stay as written. It matches only a whole token (`4820` leaves `48200` and
+`4820-1` alone), but every such token, so pass values long enough to be the
+code.
 
 ## Why not an FST toolkit
 

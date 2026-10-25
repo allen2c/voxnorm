@@ -112,14 +112,17 @@ def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] =
         codes: Exact code values, read digit by digit wherever one stands as
             a whole digit run -- `["4820", "88886666"]` for a plate tail and
             a password the caller already holds, with no word around them
-            needed (`請問您4820的車款` -> 請問您四八二零的車款). Digits only,
-            hyphen-joined groups allowed (`1234-5678`). A value never matches
-            inside a longer run: `4820` leaves `48200` and `4820-1` alone.
+            needed (`請問您4820的車款` -> 請問您四八二零的車款). Digits,
+            hyphen-joined groups allowed (`1234-5678`), optionally after
+            Latin letters and a hyphen (`BK-000456` -> BK零零零四五六: the
+            letters stay as written). A value matches only as a whole token:
+            `4820` leaves `48200` and `4820-1` alone, `A-1203` leaves
+            `XA-1203` alone.
 
     Raises:
         ValueError: If `lang` names a language no verbaliser is registered
             for, `code_words` contains an empty string, or a code is not
-            digits.
+            digits after optional letters.
         TypeError: If `code_words` or `codes` is a single string -- iterating
             it would license each of its characters.
     """

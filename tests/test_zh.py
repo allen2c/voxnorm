@@ -703,3 +703,21 @@ def test_codes_match_whole_runs_only(text: str, spoken: str) -> None:
 
 def test_codes_and_code_words_together() -> None:
     assert normalize("車牌4820，密碼5678", code_words=["車牌"], codes=["5678"]) == "車牌四八二零，密碼五六七八"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("預約編號BK-000456。", "預約編號BK零零零四五六。"),
+        ("訂單編號A-1203", "訂單編號A一二零三"),
+        ("會員AB1234", "會員AB一二三四"),
+        # Only the whole value: no letter or digit glued on, no case change.
+        ("XBK-000456", "XBK-000456"),
+        ("BK-0004567", "BK-0004567"),
+        ("BK-000456-1", "BK-000456-1"),
+        ("A-12034", "A-12034"),
+        ("a-1203", "a-1203"),
+    ],
+)
+def test_codes_with_letter_prefix(text: str, spoken: str) -> None:
+    assert normalize(text, codes=["BK-000456", "A-1203", "AB1234"]) == spoken

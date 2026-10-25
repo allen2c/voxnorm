@@ -123,3 +123,16 @@ def test_percent_scan_is_linear() -> None:
     started = time.perf_counter()
     normalize("1," * 10_000)
     assert time.perf_counter() - started < 0.5
+
+
+@pytest.mark.parametrize(
+    ("lang", "spoken"),
+    [
+        ("en", "Booking BK zero zero zero four five six"),
+        ("ja", "Booking BK〇〇〇四五六"),
+        ("ko", "Booking BK공공공사오육"),
+        ("zh-CN", "Booking BK零零零四五六"),
+    ],
+)
+def test_letter_prefixed_codes_in_every_language(lang: str, spoken: str) -> None:
+    assert normalize("Booking BK-000456", lang=lang, codes=["BK-000456"]) == spoken

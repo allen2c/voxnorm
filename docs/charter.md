@@ -92,10 +92,14 @@ needed:
 
 ```python
 normalize("請問您4820的車款繳了嗎?", codes=["4820"])
+normalize("預約編號BK-000456。", codes=["BK-000456"])
 ```
 
-A value matches only as a whole digit run, clean on both sides, so `4820`
-never licenses the front of `48200` or a group of `4820-1`. It matches
+A value is digits, optionally after Latin letters and a hyphen. Letter-hyphen-digit
+forms (`F-16`, `COVID-19`) never convert on their own; the caller naming the
+exact value is what settles `BK-000456` as a code. A value matches only as a
+whole token, clean on both sides, so `4820` never licenses the front of
+`48200` or a group of `4820-1`. It matches
 every such run, though: a short value like `12` also reads `12天` as 一二天,
 so pass only values long enough to be the code.
 

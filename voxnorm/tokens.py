@@ -136,8 +136,9 @@ it may itself convert, and a second pass must decide the same."""
 
 _ENDS_CLEAN_AT = re.compile(_ENDS_CLEAN)
 
-_CODE_VALUE = re.compile(r"\d+(?:-\d+)*", re.ASCII)
-"""The shape of one of the caller's `codes`, the same as any `code` run."""
+_CODE_VALUE = re.compile(r"(?:[A-Za-z]+-?)?\d+(?:-\d+)*", re.ASCII)
+"""The shape of one of the caller's `codes`: a `code` run, optionally after
+Latin letters and a hyphen (`4820`, `1234-5678`, `BK-000456`, `AB1234`)."""
 
 TOKEN_PATTERN = re.compile(
     rf"""
@@ -339,28 +340,42 @@ def pattern_for(code_words: tuple[str, ...], codes: tuple[str, ...] = ()) -> re.
     with codes `1234`). It must be the whole run, clean on both sides, so
     `1234` never licenses the front of `12345` or `1234-5678`.
 
+    A code may lead with Latin letters (`BK-000456`, `A-1203`): the whole
+    value must stand alone, no letter, digit or address character glued to
+    either side. The letters are captured as `code_pre` (as `code_tag`
+    inside it) and re-emitted as written, like the `A` of `A123456789`; a
+    hyphen after them drops out, like the hyphens between digit groups.
+
     Raises:
         ValueError: On an empty word, which would license every digit run,
-            or a code that is not digits (hyphen-joined groups allowed).
+            or a code outside the `_CODE_VALUE` shape.
     """
     if not code_words and not codes:
         return TOKEN_PATTERN
     if any(not word for word in code_words):
         raise ValueError("code_words must not contain an empty string")
     if any(not _CODE_VALUE.fullmatch(code) for code in codes):
-        raise ValueError("codes must be digit strings, hyphen-joined groups allowed (1234, 1234-5678)")
+        raise ValueError("codes must be digit strings, optionally after letters (1234, 1234-5678, BK-000456)")
     words = "|".join(re.escape(word) for word in sorted(set(code_words), key=len, reverse=True))
+    values = sorted(set(codes), key=len, reverse=True)
+    digit_values = "|".join(value for value in values if value[0].isdigit())
+    lettered_values = "|".join(value for value in values if not value[0].isdigit())
     # Without a leading word, a run is a code when a word follows it or when it is one of `codes`.
     licenses = []
     if code_words:
         licenses.append(rf"\d+(?:-\d+)*{_ENDS_CLEAN}\s*(?:{words})")
-    if codes:
-        licenses.append(rf"(?:{'|'.join(sorted(set(codes), key=len, reverse=True))}){_ENDS_CLEAN}")
-    # `code_pre` always exists so verbalisers can read it; with no words it never matches.
+    if digit_values:
+        licenses.append(rf"(?:{digit_values}){_ENDS_CLEAN}")
+    # `code_pre` and `code_tag` always exist so verbalisers can read them; an
+    # empty alternative is `(?!)`, which never matches.
     code = rf"""
       (?P<code>
-        (?P<code_pre>(?:{words or "(?!)"})\s*)?
-        (?(code_pre)|(?<![A-Za-z]){_STARTS_CLEAN}(?={"|".join(licenses)}))
+        (?P<code_pre>
+          (?:{words or "(?!)"})\s*
+        | (?P<code_tag>(?<![\w\-.@/+\#])(?=(?:{lettered_values or "(?!)"}){_ENDS_CLEAN})[A-Za-z]+)
+        )?
+        (?(code_tag)-?)
+        (?(code_pre)|(?<![A-Za-z]){_STARTS_CLEAN}(?={"|".join(licenses) or "(?!)"}))
         (?P<code_num>\d+(?:-\d+)*){_ENDS_CLEAN}
       )
     | """
