@@ -168,5 +168,7 @@ _RULES = {
     "year": lambda match: _sino(int(match[0])) if match.string[match.end()] == "년" else match[0],
     "decimal": lambda match: _amount_to_ko(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),
+    # 折 is a Chinese discount; elsewhere the number reads as before.
+    "discount": lambda match: _spoken_int(match[0]),
     "bare_int": lambda match: _spoken_int(match[0]),
 }

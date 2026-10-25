@@ -79,7 +79,7 @@ def test_idempotent() -> None:
     assert normalize(once) == once
 
 
-@pytest.mark.parametrize("text", ["24:00", "9:60"])
+@pytest.mark.parametrize("text", ["24:01", "24:30", "9:60"])
 def test_invalid_clock_forms_stay_written(text: str) -> None:
     assert normalize(text, lang="en") == text
 
@@ -199,6 +199,7 @@ def test_ordinals(text: str, spoken: str) -> None:
     [
         ("at 13:00", "at thirteen hundred"),
         ("at 0:00", "at zero hundred"),
+        ("closes at 24:00", "closes at twenty-four hundred"),
         ("at 9:00", "at nine o'clock"),
     ],
 )

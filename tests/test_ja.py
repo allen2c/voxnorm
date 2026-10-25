@@ -11,6 +11,7 @@ from voxnorm import normalize
         ("会議は12:00からです", "会議は十二時からです"),
         ("14:30にチェックアウト", "十四時半にチェックアウト"),
         ("12:05です", "十二時五分です"),
+        ("24:00に閉店", "二十四時に閉店"),
     ],
 )
 def test_times_autodetect_on_kana(text: str, spoken: str) -> None:

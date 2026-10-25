@@ -11,6 +11,7 @@ from voxnorm import normalize
         ("会议在12:00开始", "会议在十二点开始"),
         ("下午2:00见", "下午两点见"),
         ("14:30是退房时间", "十四点半是退房时间"),
+        ("末班车是24:00", "末班车是二十四点"),
     ],
 )
 def test_times_autodetect_on_simplified_glyphs(text: str, spoken: str) -> None:

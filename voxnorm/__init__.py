@@ -56,7 +56,7 @@ from collections.abc import Iterable
 from voxnorm import cn, en, ja, ko, zh
 from voxnorm.tokens import TOKEN_KINDS, pattern_for
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 __all__ = ["__version__", "normalize"]
 
 _VERBALIZERS = {
@@ -89,7 +89,7 @@ no Traditional evidence reads as zh-CN; anything else Chinese defaults to
 Traditional, the package's home locale."""
 
 
-def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] = ()) -> str:
+def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] = (), codes: Iterable[str] = ()) -> str:
     """Return `text` with every recognised written form replaced by its spoken form.
 
     Args:
@@ -109,17 +109,26 @@ def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] =
             package's: whether `4820` is a plate tail or a quantity is
             something only the text's author knows, so the scanner takes no
             guess and the caller names the words that settle it.
+        codes: Exact code values, read digit by digit wherever one stands as
+            a whole digit run -- `["4820", "88886666"]` for a plate tail and
+            a password the caller already holds, with no word around them
+            needed (`請問您4820的車款` -> 請問您四八二零的車款). Digits only,
+            hyphen-joined groups allowed (`1234-5678`). A value never matches
+            inside a longer run: `4820` leaves `48200` and `4820-1` alone.
 
     Raises:
         ValueError: If `lang` names a language no verbaliser is registered
-            for, or `code_words` contains an empty string.
-        TypeError: If `code_words` is a single string -- iterating it would
-            license each of its characters as a word.
+            for, `code_words` contains an empty string, or a code is not
+            digits.
+        TypeError: If `code_words` or `codes` is a single string -- iterating
+            it would license each of its characters.
     """
     if isinstance(code_words, str):
         raise TypeError("code_words must be an iterable of words, not a single str")
+    if isinstance(codes, str):
+        raise TypeError("codes must be an iterable of code values, not a single str")
     verbalize = _VERBALIZERS[_resolve_lang(text, lang)]
-    pattern = pattern_for(tuple(code_words))
+    pattern = pattern_for(tuple(code_words), tuple(codes))
     return pattern.sub(lambda match: verbalize(_kind_of(match), match), text)
 
 

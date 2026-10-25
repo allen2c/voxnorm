@@ -260,6 +260,8 @@ _RULES = {
     "unit": lambda match: UNIT_READINGS[match["unit_sym"]].format(count_to_zh(match["unit_num"])),
     "room_en": _room,
     "room_cjk": lambda match: digits_to_zh(match[0]),
+    # 85折 is 八五折, never 八十五折; 9折 九折.
+    "discount": lambda match: digits_to_zh(match[0]),
     "alnum": lambda match: digits_to_zh(match[0]),
     "code": lambda match: f"{match['code_pre'] or ''}{digits_to_zh(match['code_num'])}",
     # A year speaks only before its own script's 年; before Korean 년 it stays written.

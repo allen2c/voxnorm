@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0 — 2026-10-25
+
+Three requests from a zh-TW voice-agent TTS round trip (TTS → ASR over a
+57-sentence set), where 0.4.0 with `code_words` still misread three cases.
+
+- `24:00` is a clock time: 二十四點 / twenty-four hundred / 二十四時 /
+  이십사 시, alone and as a range end (`06:00-24:00`). Only `:00`;
+  `24:01` and `24:30` stay written.
+- New kind `discount`: one or two nonzero digits before 折 read digit by
+  digit in zh-TW and zh-CN (`85折` → 八五折, never 八十五折; `9折` → 九折).
+  `50折` and `100折` read as numbers, as before; `8.5折` stays 八點五折.
+- New `codes=` argument: exact code values the caller already holds, read
+  digit by digit wherever one stands as a whole digit run, no context word
+  needed (`normalize("請問您4820的車款", codes=["4820"])` → 請問您四八二零的車款).
+  Digits only, hyphen-joined groups allowed; never matches inside a longer
+  run (`48200`, `4820-1`).
+
 ## 0.4.0 — 2026-10-22
 
 Emails and URLs are spoken instead of passed through, in all five languages

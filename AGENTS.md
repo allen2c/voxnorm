@@ -3,7 +3,7 @@
 voxnorm turns written forms into spoken forms for TTS (`12:00` → 十二點 /
 twelve o'clock), in five languages (zh-TW, zh-CN, en, ja, ko), pure Python,
 one dependency (num2words). One public function:
-`voxnorm.normalize(text, lang=None, *, code_words=())`.
+`voxnorm.normalize(text, lang=None, *, code_words=(), codes=())`.
 
 **This file is a map — the least every agent must know, then links into
 [docs/](docs/).** The module docstrings carry the detailed reasoning; the

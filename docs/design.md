@@ -41,7 +41,7 @@ pattern untouched.
   same string, so no slash form converts unless a four-digit 19xx/20xx year
   leads it (`2026/10/16`) — and the digit lookarounds refuse
   slashes so the integers inside one cannot convert on their own. The same
-  guards cover colons, so an invalid `24:00` stays written instead of
+  guards cover colons, so an invalid `24:30` stays written instead of
   half-converting around a stranded `:`.
 
 ## Verbalisers (`voxnorm/zh.py`, `cn.py`, `en.py`, `ja.py`, `ko.py`)

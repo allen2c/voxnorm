@@ -174,7 +174,7 @@ def test_liang_fix_reaches_the_public_api() -> None:
     assert normalize("NT$120,000", lang="zh") == "新台幣十二萬元"
 
 
-@pytest.mark.parametrize("text", ["24:00", "9:60", "比分是3:2"])
+@pytest.mark.parametrize("text", ["24:01", "24:30", "24:00:00", "9:60", "比分是3:2"])
 def test_invalid_clock_forms_stay_written(text: str) -> None:
     assert normalize(text, lang="zh") == text
 
@@ -629,3 +629,77 @@ def test_ordinal_suffix_stays_written_in_chinese() -> None:
 
 def test_amount_keeps_the_comma_after_it() -> None:
     assert normalize("$5, $6", lang="zh") == "五元, 六元"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("末班車是24:00。", "末班車是二十四點。"),
+        ("營業時間06:00到24:00", "營業時間六點到二十四點"),
+        ("營業時間06:00-24:00", "營業時間六點到二十四點"),
+    ],
+)
+def test_end_of_day_reads_as_twenty_four(text: str, spoken: str) -> None:
+    # 24:00 is the end of a day (a last train, a closing time); only :00 is.
+    assert normalize(text) == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("享85折的優惠", "享八五折的優惠"),
+        ("全館9折", "全館九折"),
+        ("75折、95折", "七五折、九五折"),
+        ("打8.5折", "打八點五折"),
+        ("2折起", "二折起"),
+    ],
+)
+def test_discounts_read_digit_by_digit(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # A zero digit is no discount anyone writes; the number reads as before.
+        ("50折", "五十折"),
+        ("100折", "一百折"),
+        ("A85折", "A八五折"),
+        ("3-85折", "3-85折"),
+    ],
+)
+def test_discount_lookalikes(text: str, spoken: str) -> None:
+    assert normalize(text) == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "codes", "spoken"),
+    [
+        ("請問您1234的車款繳了嗎?", ["1234"], "請問您一二三四的車款繳了嗎?"),
+        ("密碼是88886666，車牌4820", ["88886666", "4820"], "密碼是八八八八六六六六，車牌四八二零"),
+        ("請撥打 1234-5678", ["1234-5678"], "請撥打 一二三四五六七八"),
+        ("1234與1234", ("1234",), "一二三四與一二三四"),
+    ],
+)
+def test_codes(text: str, codes: list[str], spoken: str) -> None:
+    assert normalize(text, codes=codes) == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        # A code is the whole run: never the front, back or a group of a longer form.
+        ("12345", "一萬兩千三百四十五"),
+        ("91234", "九萬一千兩百三十四"),
+        ("1234-5678", "1234-5678"),
+        ("1234.5", "一千兩百三十四點五"),
+        ("12:34", "十二點三十四分"),
+        ("A1234", "A一二三四"),
+    ],
+)
+def test_codes_match_whole_runs_only(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh", codes=["1234", "34"]) == spoken
+
+
+def test_codes_and_code_words_together() -> None:
+    assert normalize("車牌4820，密碼5678", code_words=["車牌"], codes=["5678"]) == "車牌四八二零，密碼五六七八"

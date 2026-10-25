@@ -23,6 +23,7 @@ def test_two_oclock_is_native() -> None:
 
 def test_after_twelve_hours_read_sino() -> None:
     assert normalize("14:30", lang="ko") == "십사 시 반"
+    assert normalize("24:00", lang="ko") == "이십사 시"
 
 
 def test_iso_date_with_irregular_months() -> None:

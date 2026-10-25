@@ -29,8 +29,9 @@ Two hard-won rules shape every alternative:
 
 The one thing the scanner cannot know is vocabulary: that the digits after
 車牌 or `plate` are a code. That knowledge is open-ended and belongs to the
-caller, who hands it in as `code_words`; `pattern_for` splices those literal
-anchors in as a `code` alternative ahead of everything else.
+caller, who hands it in as `code_words` (or names the values themselves as
+`codes`); `pattern_for` splices those literals in as a `code` alternative
+ahead of everything else.
 """
 
 import re
@@ -54,6 +55,7 @@ TOKEN_KINDS = (
     "room_en",
     "alnum",
     "room_cjk",
+    "discount",
     "year",
     "decimal",
     "comma_int",
@@ -97,8 +99,10 @@ _CLOCK_12H = r"(?:1[0-2]|0?[1-9])(?::[0-5]\d)?\ ?[AaPp](?:\.[Mm]\.|[Mm])(?![A-Za
 """A twelve-hour time: hour 1-12, optional minutes, then am/pm (`9am`,
 `9:30 PM`, `10 a.m.`). The mark settles it; without one, `9` is a number."""
 
-_CLOCK_24H = r"(?:[01]?\d|2[0-3]):[0-5]\d"
-"""A clock time, `HH:MM`, 24-hour, minutes always two digits."""
+_CLOCK_24H = r"(?:[01]?\d|2[0-3]|24(?=:00)):[0-5]\d"
+"""A clock time, `HH:MM`, 24-hour, minutes always two digits. Hour 24 only
+as `24:00`, the end of a day (a last train, a closing time); `24:30` is not a
+time of day, so it stays written."""
 
 _CLOCK_PARTS = re.compile(r"(\d{1,2})(?::(\d\d))?\ ?(?:([AaPp])(?:\.[Mm]\.|[Mm]))?")
 
@@ -132,6 +136,9 @@ it may itself convert, and a second pass must decide the same."""
 
 _ENDS_CLEAN_AT = re.compile(_ENDS_CLEAN)
 
+_CODE_VALUE = re.compile(r"\d+(?:-\d+)*", re.ASCII)
+"""The shape of one of the caller's `codes`, the same as any `code` run."""
+
 TOKEN_PATTERN = re.compile(
     rf"""
       (?P<markup>
@@ -145,7 +152,7 @@ TOKEN_PATTERN = re.compile(
       )
     | (?P<time_range>{_STARTS_CLEAN}(?P<range_from>{_CLOCK_12H}|{_CLOCK_24H})\ ?[-~～–]\ ?(?P<range_to>{_CLOCK_12H}|{_CLOCK_24H}){_ENDS_CLEAN})
     | (?P<time_12h>{_STARTS_CLEAN}{_CLOCK_12H}{_ENDS_CLEAN})
-    | (?P<time>{_STARTS_CLEAN}(?P<time_h>[01]?\d|2[0-3]):(?P<time_m>[0-5]\d){_ENDS_CLEAN})
+    | (?P<time>{_STARTS_CLEAN}(?P<time_h>[01]?\d|2[0-3]|24(?=:00)):(?P<time_m>[0-5]\d){_ENDS_CLEAN})
     | (?P<iso_date>{_STARTS_CLEAN}(?P<iso_y>(?:19|20)\d\d)(?P<iso_sep>[-/])(?P<iso_mo>0?[1-9]|1[0-2])(?P=iso_sep)(?P<iso_d>0?[1-9]|[12]\d|3[01]){_ENDS_CLEAN})
     | (?P<phone>
         (?P<phone_num>
@@ -171,6 +178,7 @@ TOKEN_PATTERN = re.compile(
     | (?P<room_en>(?P<room_word>(?<![A-Za-z])(?:[Rr]oom|[Ee]xt\.?)|房號|房号|分機|分机)(?P<room_link>\ ?(?:[是為为:：]\ ?)?)\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
     | (?P<alnum>(?:(?<=[A-Za-z])(?<!\d[xX])|(?<=[*＊●•]{{3}})(?=\d+(?![\d*＊])))\d+{_ENDS_CLEAN})
     | (?P<room_cjk>{_STARTS_CLEAN}\d{{3,10}}(?=號|号|室|호))
+    | (?P<discount>{_STARTS_CLEAN}[1-9][1-9]?(?!\d)(?=折))
     | (?P<year>{_STARTS_CLEAN}(?:19|20)\d\d(?=年|년))
     | (?P<decimal>{_STARTS_CLEAN}(?:[1-9]\d{{0,2}}(?:,\d{{3}})+|\d+)\.\d+{_ENDS_CLEAN})
     | (?P<comma_int>{_STARTS_CLEAN}[1-9]\d{{0,2}}(?:,\d{{3}})+{_ENDS_CLEAN})
@@ -202,6 +210,8 @@ TOKEN_PATTERN = re.compile(
   `9:30` a 24-hour time.
 - `time` — `HH:MM`, 24-hour, minutes always two digits; the trailing guard
   keeps `12:00:05` (a duration with seconds, unhandled) from half-matching.
+  Hour 24 matches only as `24:00`, the end of the day; `24:01` and `24:30`
+  stay written.
 - `iso_date` — `YYYY-MM-DD` or `YYYY/MM/DD` (one separator throughout,
   `iso_sep`) with a plausibility window on every field, so an id-like
   `1234-56-78` stays text. The four-digit 19xx/20xx lead is what lets a
@@ -275,6 +285,12 @@ TOKEN_PATTERN = re.compile(
   is a unit or an ordinal suffix (`100km`, `4K`, `10th`), still a quantity.
   Sits after `currency` so `USD100` keeps its currency reading (alternation
   order decides at the `U`, which the scanner reaches first).
+- `discount` — one or two nonzero digits directly before 折 are a price
+  discount and read digit by digit: `85折` is 八五折 (85% of the price),
+  never 八十五折, and `9折` is 九折. 折 stays outside the match. A zero
+  digit (`50折`, `10折`) is no discount anyone writes, so it is left to
+  `bare_int`; `8.5折` is a `decimal` (八點五折). Only the Chinese
+  verbalisers read it; the others read the number as before.
 - `year` — four digits directly before 年/년 read as a year (二零二六年
   digit by digit in Chinese, 二千二十六年 / 이천이십육년 as cardinals in
   Japanese and Korean — the split lives in the verbalisers, and each speaks
@@ -304,8 +320,8 @@ so a number before `, ` or after a `：` label never converted.
 
 
 @lru_cache(maxsize=64)
-def pattern_for(code_words: tuple[str, ...]) -> re.Pattern:
-    """`TOKEN_PATTERN` with a `code` alternative for the caller's `code_words`.
+def pattern_for(code_words: tuple[str, ...], codes: tuple[str, ...] = ()) -> re.Pattern:
+    """`TOKEN_PATTERN` with a `code` alternative for the caller's `code_words` and `codes`.
 
     Each word is matched literally. A digit run directly after a word
     (whitespace allowed) or directly before one reads as a code, digit by
@@ -319,20 +335,33 @@ def pattern_for(code_words: tuple[str, ...]) -> re.Pattern:
     character or Latin letter before it), and that lookbehind sits *before*
     the digits: placed after them it would only ever see the last digit.
 
+    A run equal to one of `codes` is a code with no word at all (`請問您1234的車款`
+    with codes `1234`). It must be the whole run, clean on both sides, so
+    `1234` never licenses the front of `12345` or `1234-5678`.
+
     Raises:
-        ValueError: On an empty word, which would license every digit run.
+        ValueError: On an empty word, which would license every digit run,
+            or a code that is not digits (hyphen-joined groups allowed).
     """
-    if not code_words:
+    if not code_words and not codes:
         return TOKEN_PATTERN
     if any(not word for word in code_words):
         raise ValueError("code_words must not contain an empty string")
+    if any(not _CODE_VALUE.fullmatch(code) for code in codes):
+        raise ValueError("codes must be digit strings, hyphen-joined groups allowed (1234, 1234-5678)")
     words = "|".join(re.escape(word) for word in sorted(set(code_words), key=len, reverse=True))
+    # Without a leading word, a run is a code when a word follows it or when it is one of `codes`.
+    licenses = []
+    if code_words:
+        licenses.append(rf"\d+(?:-\d+)*{_ENDS_CLEAN}\s*(?:{words})")
+    if codes:
+        licenses.append(rf"(?:{'|'.join(sorted(set(codes), key=len, reverse=True))}){_ENDS_CLEAN}")
+    # `code_pre` always exists so verbalisers can read it; with no words it never matches.
     code = rf"""
       (?P<code>
-        (?P<code_pre>(?:{words})\s*)?
-        (?(code_pre)|(?<![A-Za-z]){_STARTS_CLEAN})
+        (?P<code_pre>(?:{words or "(?!)"})\s*)?
+        (?(code_pre)|(?<![A-Za-z]){_STARTS_CLEAN}(?={"|".join(licenses)}))
         (?P<code_num>\d+(?:-\d+)*){_ENDS_CLEAN}
-        (?(code_pre)|(?=\s*(?:{words})))
       )
     | """
     return re.compile(code + TOKEN_PATTERN.pattern, re.VERBOSE | re.ASCII)

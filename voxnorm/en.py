@@ -267,5 +267,7 @@ _RULES = {
     "year": lambda match: match[0],
     "decimal": lambda match: _amount_to_en(match[0]),
     "comma_int": lambda match: _spoken_int(match[0].replace(",", "")),
+    # 折 is a Chinese discount; elsewhere the number reads as before.
+    "discount": lambda match: _spoken_int(match[0]),
     "bare_int": lambda match: _spoken_int(match[0]),
 }

@@ -18,6 +18,9 @@ itself says it counts something: before a magnitude character (2萬 → 兩萬,
 (2位 → 兩位, 2晚 → 兩晚, 2小時 → 兩小時), and as a currency amount ($2 →
 兩元). After 第 it is an ordinal (第二名), and before words left off the
 list (號 樓 月 年 分 折 期 級 層) it stays 二.
+A discount reads digit by digit (85折 → 八五折, 9折 → 九折, 2折 → 二折),
+in zh-CN too; the other languages read the number as before. 24:00 is
+二十四點.
 A currency multiplier is spoken before the unit (NT$3.5萬 → 新台幣三點五萬元).
 Twelve-hour times take 上午/下午 (12am is 凌晨十二點, 12pm 中午十二點), a
 time range reads 到 between its ends, a temperature is 攝氏/華氏 with 零下

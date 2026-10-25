@@ -36,7 +36,7 @@ Two layers, split where languages stop sharing:
   the spans — times, time ranges and am/pm times, ISO and four-digit-year
   slash dates, phone numbers (with area codes in parentheses, `+` country
   codes, `#`/轉 extensions and North American 3-3-4 numbers), currency,
-  percentages, temperatures, metric units, room numbers, letter-glued
+  percentages, temperatures, metric units, room numbers, 折 discounts, letter-glued
   identifiers and masked tails, emails and URLs,
   decimals, integers — and names their kind. Angle-bracket markup
   (`<break time="500ms"/>`) passes through untouched.
@@ -93,6 +93,17 @@ allowed) or directly after it; include any connective in the word itself
 same API carries 車牌, `plate`, 会員番号 and 계좌. A word also licenses
 hyphen-joined groups (`1234-5678`), which without it stay written: the same
 string is the year range `1990-2000`.
+
+When the caller holds the code values themselves — a plate tail or password
+from the case record — it can name those instead, with no word around them:
+
+```python
+>>> voxnorm.normalize("請問您4820的車款繳了嗎?", codes=["4820"])
+'請問您四八二零的車款繳了嗎?'
+```
+
+A value matches only a whole digit run (`4820` leaves `48200` and `4820-1`
+alone), but every such run, so pass values long enough to be the code.
 
 ## Why not an FST toolkit
 

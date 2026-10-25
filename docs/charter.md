@@ -8,7 +8,7 @@ written, which is where it started.
 
 | Form | Example | Why the shape is enough |
 |---|---|---|
-| Clock time | `14:30` | `HH:MM` with valid ranges |
+| Clock time | `14:30`, `24:00` | `HH:MM` with valid ranges; hour 24 only as `24:00`, the end of a day |
 | Twelve-hour time | `9:30pm`, `10 a.m.` | hour 1–12 and an am/pm mark |
 | Time range | `8:00-17:00`, `9am～6pm` | a clock time on both sides of the dash |
 | Date | `2026-08-17`, `2026/08/17` | a 19xx/20xx year, then month/day windows |
@@ -24,6 +24,7 @@ written, which is where it started.
 | Room / extension | `302號`, `Room 12`, `分機 123`, `房號是1203` | anchored by a context word, a 是/為/colon allowed between |
 | Letter-glued digits | `A123456789`, `H1N1` | a Latin letter on the left is an identifier |
 | Masked tail | `****1234`, `●●●●5678` | three or more mask characters on the left |
+| Discount | `85折`, `9折` | one or two nonzero digits before 折 (八五折, never 八十五折) |
 | Year | `2026年` | anchored by 年/년 |
 | Leading-zero run | `0912345678` | never a quantity |
 | Email, URL | `a12345.user@x.com.tw`, `https://www.x.com/help?id=12` | an `@` with a dotted domain, or `http(s)://` / `www.` |
@@ -59,7 +60,7 @@ other symbol (`&`, `%`, `#`, `~`, `+`), or glued to more text (a second
   not make a code (an ungrouped `1500000000元` budget is a quantity), so
   there is no digit-count threshold; 序號 or 編號 before the run is
   vocabulary, which belongs to the caller.
-- **Colon forms the clock rejects**: `24:00`, `3:2`. A colon after a word
+- **Colon forms the clock rejects**: `24:30`, `3:2`. A colon after a word
   is a label, so `金額：1,200元` converts.
 - **Full-width digits**: the scanner is ASCII-only; zenkaku forms pass whole.
 - **Two digits before 號**: `17號` is a day, `302號` is a room.
@@ -85,8 +86,21 @@ run; a connective belongs inside the word (`末四碼是`). The run may be
 hyphen-joined digit groups (`1234-5678`), which a word licenses as a code;
 any other joined form (`3.5`, `12:00`) keeps the run out.
 
-When a bug report asks for a new context word, the answer is `code_words`
-or the caller's own template, not a scanner change.
+A caller that holds the code values themselves (a plate tail, an account
+tail, a password from the case record) names them instead, with no word
+needed:
+
+```python
+normalize("請問您4820的車款繳了嗎?", codes=["4820"])
+```
+
+A value matches only as a whole digit run, clean on both sides, so `4820`
+never licenses the front of `48200` or a group of `4820-1`. It matches
+every such run, though: a short value like `12` also reads `12天` as 一二天,
+so pass only values long enough to be the code.
+
+When a bug report asks for a new context word, the answer is `code_words`,
+`codes`, or the caller's own template, not a scanner change.
 
 ## Two regex rules
 
