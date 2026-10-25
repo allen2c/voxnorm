@@ -1,9 +1,16 @@
 # Changelog
 
+## 0.5.1 — 2026-10-25
+
+Docs only; no behaviour change.
+
+- README rewritten short and English-first.
+- Examples in docs, docstrings and tests are generic placeholders: no
+  domain-specific scenarios, no references to other projects.
+
 ## 0.5.0 — 2026-10-25
 
-Three requests from a zh-TW voice-agent TTS round trip (TTS → ASR over a
-57-sentence set), where 0.4.0 with `code_words` still misread three cases.
+Three readings a TTS → ASR round trip found misread in 0.4.0.
 
 - `24:00` is a clock time: 二十四點 / twenty-four hundred / 二十四時 /
   이십사 시, alone and as a range end (`06:00-24:00`). Only `:00`;
@@ -13,7 +20,7 @@ Three requests from a zh-TW voice-agent TTS round trip (TTS → ASR over a
   `50折` and `100折` read as numbers, as before; `8.5折` stays 八點五折.
 - New `codes=` argument: exact code values the caller already holds, read
   digit by digit wherever one stands as a whole digit run, no context word
-  needed (`normalize("請問您4820的車款", codes=["4820"])` → 請問您四八二零的車款).
+  needed (`normalize("Ticket 4820", codes=["4820"])` → Ticket four eight two zero).
   Digits, hyphen-joined groups allowed, optionally after Latin letters and a
   hyphen (`BK-000456` → BK零零零四五六, letters as written); a value
   matches only as a whole token, never inside a longer one (`48200`,
@@ -23,8 +30,7 @@ Three requests from a zh-TW voice-agent TTS round trip (TTS → ASR over a
 ## 0.4.0 — 2026-10-22
 
 Emails and URLs are spoken instead of passed through, in all five languages
-(requested by edge-tts-playground: a self-hosted voice derailed on literal
-addresses). On by default; no option.
+(a TTS voice derailed on literal addresses). On by default; no option.
 
 - `a12345.user@example.com.tw` → a一二三四五 點 user，小老鼠，example 點 com 點
   tw (zh-CN 艾特, en "at", ja アットマーク, ko 골뱅이). Letter runs stay as
@@ -36,9 +42,8 @@ addresses). On by default; no option.
 - A URL no longer ends on sentence punctuation (`see www.x.com.`).
 - en: a spoken word is padded from a following `@` (`5%@x.com` → five
   percent @x.com), so it never becomes an email's local part.
-- Docs and tests: example emails, domains, phone numbers and serials taken
-  from a customer report are replaced with placeholders throughout, older
-  entries below included (`(02)1234-5678`, `12345678901`,
+- Docs and tests: example emails, domains, phone numbers and serials are
+  placeholders throughout, older entries below included (`(02)1234-5678`, `12345678901`,
   `a12345.user@example.com.tw`).
 
 ## 0.3.0 — 2026-10-21
@@ -141,7 +146,7 @@ beyond what the fixes needed (`ordinal`, `url_or_email`).
 
 - `normalize(text, code_words=[...])`: caller-supplied words that mark the
   digit run directly after (whitespace allowed) or directly before them as a
-  code, read digit by digit. The vocabulary that says `4820` is a plate tail
+  code, read digit by digit. The vocabulary that says `4820` is an identifier
   is open-ended and the caller's, so it is a parameter, not a built-in list.
 - New `alnum` token kind: a digit run glued to a Latin letter on its left
   (`A123456789`, `H1N1`) is an identifier and reads digit by digit. Only the

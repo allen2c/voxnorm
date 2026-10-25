@@ -111,7 +111,7 @@ def test_hyphen_forms_stay_written(text: str) -> None:
 
 
 def test_code_words() -> None:
-    assert normalize("plate 4820 is overdue", code_words=["plate"]) == "plate four eight two zero is overdue"
+    assert normalize("code 4820 is ready", code_words=["code"]) == "code four eight two zero is ready"
 
 
 @pytest.mark.parametrize(
@@ -290,7 +290,7 @@ def test_spoken_words_do_not_glue_to_letters(text: str, spoken: str) -> None:
 
 
 def test_code_word_glued_to_digits_gets_a_space() -> None:
-    assert normalize("plate4820", code_words=["plate"]) == "plate four eight two zero"
+    assert normalize("code4820", code_words=["code"]) == "code four eight two zero"
 
 
 def test_markup_passes_through() -> None:

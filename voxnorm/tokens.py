@@ -28,7 +28,7 @@ Two hard-won rules shape every alternative:
   and up, because `302號` is a room and `17號` is a day of the month.
 
 The one thing the scanner cannot know is vocabulary: that the digits after
-車牌 or `plate` are a code. That knowledge is open-ended and belongs to the
+編號 or `ticket` are a code. That knowledge is open-ended and belongs to the
 caller, who hands it in as `code_words` (or names the values themselves as
 `codes`); `pattern_for` splices those literals in as a `code` alternative
 ahead of everything else.
@@ -336,7 +336,7 @@ def pattern_for(code_words: tuple[str, ...], codes: tuple[str, ...] = ()) -> re.
     character or Latin letter before it), and that lookbehind sits *before*
     the digits: placed after them it would only ever see the last digit.
 
-    A run equal to one of `codes` is a code with no word at all (`請問您1234的車款`
+    A run equal to one of `codes` is a code with no word at all (`Ticket 1234`
     with codes `1234`). It must be the whole run, clean on both sides, so
     `1234` never licenses the front of `12345` or `1234-5678`.
 

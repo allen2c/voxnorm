@@ -42,7 +42,7 @@ def test_digits_to_zh_keeps_zeros() -> None:
     [
         ("會議在12:00開始", "會議在十二點開始"),
         ("下午2:00見", "下午兩點見"),
-        ("14:30退房", "十四點半退房"),
+        ("14:30出發", "十四點半出發"),
         ("12:05提醒我", "十二點零五分提醒我"),
         ("早上09:15", "早上九點十五分"),
         ("22:00關門", "二十二點關門"),
@@ -103,7 +103,7 @@ def test_separatorless_phone_reads_digit_by_digit() -> None:
         ("1203號房的客人", "一二零三號房的客人"),
         ("在517室", "在五一七室"),
         # Two digits before 號 is a day of the month, not a room.
-        ("17號退房", "十七號退房"),
+        ("17號出發", "十七號出發"),
     ],
 )
 def test_rooms(text: str, spoken: str) -> None:
@@ -195,7 +195,7 @@ def test_long_code_before_hao_reads_digit_by_digit() -> None:
     [
         # A digit run glued to a Latin letter is an identifier, never a quantity.
         ("身分證字號A123456789。", "身分證字號A一二三四五六七八九。"),
-        ("訂單編號AB1234567已成立。", "訂單編號AB一二三四五六七已成立。"),
+        ("編號AB1234567已建立。", "編號AB一二三四五六七已建立。"),
     ],
 )
 def test_letter_glued_digits_read_as_code(text: str, spoken: str) -> None:
@@ -207,11 +207,11 @@ def test_letter_glued_digits_read_as_code(text: str, spoken: str) -> None:
     [
         # Hyphen/tilde forms are ambiguous (a shop name, a range, a phone stub)
         # and stay written whole -- they used to half-convert to 七-十一.
-        "在7-11繳的嗎?",
+        "在7-11買的嗎?",
         "3-5天內入帳",
         "大約10~20分鐘",
         "請撥1234-5678",
-        "車牌ABC-1234",
+        "代碼ABC-1234",
     ],
 )
 def test_hyphen_forms_stay_written(text: str) -> None:
@@ -221,19 +221,19 @@ def test_hyphen_forms_stay_written(text: str) -> None:
 @pytest.mark.parametrize(
     ("text", "code_words", "spoken"),
     [
-        ("車牌1000的那筆已經入帳了。", ["車牌"], "車牌一零零零的那筆已經入帳了。"),
-        ("帳號末五碼38104。", ["帳號末五碼"], "帳號末五碼三八一零四。"),
+        ("代碼1000的那筆已經完成了。", ["代碼"], "代碼一零零零的那筆已經完成了。"),
+        ("末五碼38104。", ["末五碼"], "末五碼三八一零四。"),
         # A trailing word licenses the run before it.
-        ("請問您4820的車款繳了嗎?", ["的車款"], "請問您四八二零的車款繳了嗎?"),
+        ("請確認4820這組號碼。", ["這組號碼"], "請確認四八二零這組號碼。"),
         # Only the licensed run changes; the quantity in the same sentence keeps its reading.
-        ("車牌4820的車款已逾期12天。", ["車牌"], "車牌四八二零的車款已逾期十二天。"),
+        ("代碼4820已等待12天。", ["代碼"], "代碼四八二零已等待十二天。"),
         # Whitespace between word and digits is allowed.
         ("末四碼 4820", ["末四碼"], "末四碼 四八二零"),
         # Words are literal and adjacent: 末四碼 alone does not reach past 是.
         ("末四碼是4820", ["末四碼"], "末四碼是四千八百二十"),
         ("末四碼是4820", ["末四碼是"], "末四碼是四八二零"),
         # A word absent from the text changes nothing.
-        ("本期應繳金額為12500元。", ["車牌"], "本期應繳金額為一萬兩千五百元。"),
+        ("總金額為12500元。", ["代碼"], "總金額為一萬兩千五百元。"),
         # A run touching a form character falls through to the structural kinds.
         ("電話0912-345-678。", ["電話"], "電話零九一二三四五六七八。"),
         ("編號302號房", ["編號"], "編號三零二號房"),
@@ -346,7 +346,7 @@ def test_long_digit_run_stays_a_quantity_without_code_words() -> None:
     ("text", "spoken"),
     [
         ("卡號****1234", "卡號****一二三四"),
-        ("帳號●●●●5678", "帳號●●●●五六七八"),
+        ("號碼●●●●5678", "號碼●●●●五六七八"),
         # Markdown bold is two stars around a quantity, not a mask.
         ("**12**", "**十二**"),
     ],
@@ -374,7 +374,7 @@ def test_markup_passes_through(text: str, spoken: str) -> None:
 @pytest.mark.parametrize(
     ("text", "spoken"),
     [
-        # The edge-tts-playground cases: letters as written, digits one by
+        # Letters as written, digits one by
         # one, symbols by name, a pause either side of 小老鼠.
         ("a12345.user@example.com.tw", "a一二三四五 點 user，小老鼠，example 點 com 點 tw"),
         ("service-desk_01@example.com.tw", "service 減號 desk 底線 零一，小老鼠，example 點 com 點 tw"),
@@ -410,9 +410,9 @@ def test_emails_and_urls(text: str, spoken: str) -> None:
     assert normalize(text, lang="zh") == spoken
 
 
-def test_customer_service_sentence() -> None:
-    # The edge-tts-playground report, verbatim. The email reads piece by piece; the
-    # serial stays a quantity here (see the code_words test above).
+def test_mixed_sentence() -> None:
+    # Many forms in one sentence, placeholders throughout. The email reads piece by
+    # piece; the serial stays a quantity here (see the code_words test above).
     text = (
         "您好，這裡是AI智能服務，您的身分證字號是A123456789，登記的手機號碼是0912345678，"
         "email信箱是a12345.user@example.com.tw。本次交易金額為新臺幣12345元，交易序號是12345678901。"
@@ -675,8 +675,8 @@ def test_discount_lookalikes(text: str, spoken: str) -> None:
 @pytest.mark.parametrize(
     ("text", "codes", "spoken"),
     [
-        ("請問您1234的車款繳了嗎?", ["1234"], "請問您一二三四的車款繳了嗎?"),
-        ("密碼是88886666，車牌4820", ["88886666", "4820"], "密碼是八八八八六六六六，車牌四八二零"),
+        ("請確認1234是否正確?", ["1234"], "請確認一二三四是否正確?"),
+        ("驗證碼是88886666，代碼4820", ["88886666", "4820"], "驗證碼是八八八八六六六六，代碼四八二零"),
         ("請撥打 1234-5678", ["1234-5678"], "請撥打 一二三四五六七八"),
         ("1234與1234", ("1234",), "一二三四與一二三四"),
     ],
@@ -702,15 +702,15 @@ def test_codes_match_whole_runs_only(text: str, spoken: str) -> None:
 
 
 def test_codes_and_code_words_together() -> None:
-    assert normalize("車牌4820，密碼5678", code_words=["車牌"], codes=["5678"]) == "車牌四八二零，密碼五六七八"
+    assert normalize("代碼4820，驗證碼5678", code_words=["代碼"], codes=["5678"]) == "代碼四八二零，驗證碼五六七八"
 
 
 @pytest.mark.parametrize(
     ("text", "spoken"),
     [
-        ("預約編號BK-000456。", "預約編號BK零零零四五六。"),
-        ("訂單編號A-1203", "訂單編號A一二零三"),
-        ("會員AB1234", "會員AB一二三四"),
+        ("編號BK-000456。", "編號BK零零零四五六。"),
+        ("代碼A-1203", "代碼A一二零三"),
+        ("代碼AB1234", "代碼AB一二三四"),
         # Only the whole value: no letter or digit glued on, no case change.
         ("XBK-000456", "XBK-000456"),
         ("BK-0004567", "BK-0004567"),

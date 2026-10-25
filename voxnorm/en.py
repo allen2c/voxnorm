@@ -182,7 +182,7 @@ def _phone(match: re.Match) -> str:
 
 def _code(match: re.Match) -> str:
     pre = match["code_pre"] or ""
-    # `plate4820` is "plate four eight two zero": a glued word gets its space.
+    # `code4820` is "code four eight two zero": a glued word gets its space.
     if pre and not pre[-1].isspace():
         pre += " "
     return f"{pre}{_digit_groups(match['code_num'])}"

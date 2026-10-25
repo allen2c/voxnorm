@@ -59,7 +59,7 @@ def test_empty_text() -> None:
 
 
 def test_code_words_accept_any_iterable() -> None:
-    assert normalize("車牌4820", code_words={"車牌"}) == "車牌四八二零"
+    assert normalize("代碼4820", code_words={"代碼"}) == "代碼四八二零"
 
 
 def test_empty_code_word_raises() -> None:
@@ -68,7 +68,7 @@ def test_empty_code_word_raises() -> None:
 
 
 def test_single_string_code_words_raises() -> None:
-    # Iterating "plate" would license p, l, a, t and e one by one.
+    # Iterating "code" would license c, o, d and e one by one.
     with pytest.raises(TypeError, match="not a single str"):
         normalize("ab 12", code_words="b")
 

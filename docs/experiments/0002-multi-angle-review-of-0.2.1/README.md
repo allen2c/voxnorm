@@ -52,7 +52,7 @@ shape alone settles the reading. Each finding is classed:
 | `long-digit-run-crash` | ja `"9"*52`, ko `"9"*72`, en `"9"*307` → OverflowError in num2words; past 4300 digits `int()` raises in all three | digit-by-digit past 16 digits, as zh already does |
 | `percent-quadratic-backtracking` | `"1,"*10000` → 3.1 s; 40 KB → 25–50 s | linear; lookbehind `(?<![\d.,])` measured 0.003 s |
 | `comma-and-colon-block-numbers` | `價格12, 謝謝`, `I have 3, 4 apples`, `金額：1,200元`, `房號：1203` → all stay written | a `,` `:` `：` blocks only with a digit on its other side |
-| `code-words-string-split` | `code_words="b"` licenses every `b`; `"plate"` licenses p, l, a, t, e | `TypeError` on a `str` |
+| `code-words-string-split` | `code_words="b"` licenses every `b`; `"code"` licenses c, o, d, e | `TypeError` on a `str` |
 | `phone-edges` | `02-1234-5678#1234567` → `…#一百二十三萬…`; `0912 345 678 999` half-converts; `(02) 2345 6789` → `(零二) 兩千…`; `+1 (800) 555-1234` → `+one (eight hundred)…`; `(02)1234-5678 轉 123` → `…轉 一百二十三` | whole phone or whole written |
 
 ### Charter violations
@@ -82,7 +82,7 @@ shape alone settles the reading. Each finding is classed:
 | `en-currency-cents` | `$1.50` → one point five zero dollars; `$0.01`; `£2.50` | one dollar and fifty cents |
 | `en-cardinal-comma-pause` | `1100` → one thousand, one hundred | no comma (TTS pauses on it) |
 | `en-ordinal-suffix` | `1st 21st` → onest, twenty-onest | first, twenty-first |
-| `en-words-glued-to-letters` | `9:30am` → nine thirtyam; `3x10` → threex…; with `code_words=["plate"]`, `plate4820` → platefour… | a space between a spoken word and an adjacent Latin letter |
+| `en-words-glued-to-letters` | `9:30am` → nine thirtyam; `3x10` → threex…; with `code_words=["code"]`, `code4820` → codefour… | a space between a spoken word and an adjacent Latin letter |
 | `ko-decimal-zero-gong` | `0.05` → 영점공오 | 영점영오 (공 is the phone zero) |
 | `ko-native-counters` | `2명 2개 3잔` → 이명… | 두 명, 두 개, 세 잔 (closed counter list) |
 | `ko-room-reading` | `302호` → 삼공이호 | 삼백이 호 is usual (**decision**) |

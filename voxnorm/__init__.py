@@ -56,7 +56,7 @@ from collections.abc import Iterable
 from voxnorm import cn, en, ja, ko, zh
 from voxnorm.tokens import TOKEN_KINDS, pattern_for
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 __all__ = ["__version__", "normalize"]
 
 _VERBALIZERS = {
@@ -103,16 +103,16 @@ def normalize(text: str, lang: str | None = None, *, code_words: Iterable[str] =
             distinctive-glyph check choosing Simplified when the text shows
             it), otherwise English.
         code_words: Words that mark the digit run next to them as a code, to
-            be read digit by digit -- `車牌`, `帳號末五碼`, `plate`, `的車款`.
+            be read digit by digit -- `code is`, `ticket`, `編號`, `末五碼`.
             Matched literally, directly before the digits (whitespace allowed)
             or directly after them. This is the caller's vocabulary, not the
-            package's: whether `4820` is a plate tail or a quantity is
+            package's: whether `4820` is an identifier or a quantity is
             something only the text's author knows, so the scanner takes no
             guess and the caller names the words that settle it.
         codes: Exact code values, read digit by digit wherever one stands as
-            a whole digit run -- `["4820", "88886666"]` for a plate tail and
-            a password the caller already holds, with no word around them
-            needed (`請問您4820的車款` -> 請問您四八二零的車款). Digits,
+            a whole token -- `["4820"]` for an identifier the caller already
+            holds, with no word around it needed (`Ticket 4820 is ready` ->
+            Ticket four eight two zero is ready). Digits,
             hyphen-joined groups allowed (`1234-5678`), optionally after
             Latin letters and a hyphen (`BK-000456` -> BK零零零四五六: the
             letters stay as written). A value matches only as a whole token:

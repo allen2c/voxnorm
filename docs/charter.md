@@ -70,41 +70,28 @@ other symbol (`&`, `%`, `#`, `~`, `+`), or glued to more text (a second
 
 ## What the caller decides
 
-Whether `4820` is a plate tail or a quantity is vocabulary, and vocabulary is
-open-ended: it changes per domain and per language. The package refuses to
-own that list. The caller names the words:
+Whether `4820` is an identifier or a quantity is vocabulary, and vocabulary
+changes per domain and per language. The package does not own that list;
+the caller names either the words around a code or the code values:
 
 ```python
-normalize("車牌4820的車款已逾期12天。", code_words=["車牌"])
-normalize("請問您4820的車款繳了嗎?", code_words=["的車款"])
-normalize("交易序號是12345678901。", code_words=["序號是"])
-normalize("請撥打 1234-5678。", code_words=["撥打"])
+normalize("Your code is 4820.", code_words=["code is"])  # four eight two zero
+normalize("Serial 12345678901", code_words=["Serial"])  # digit by digit
+normalize("Dial 1234-5678", code_words=["Dial"])  # a hyphen form a word licenses
+normalize("Ticket 4820 is ready.", codes=["4820"])
+normalize("Ref BK-000456", codes=["BK-000456"])  # letters stay as written
 ```
 
-Words are literal, directly before (whitespace allowed) or after the digit
-run; a connective belongs inside the word (`末四碼是`). The run may be
-hyphen-joined digit groups (`1234-5678`), which a word licenses as a code;
-any other joined form (`3.5`, `12:00`) keeps the run out.
+- A word is literal, directly before (whitespace allowed) or after the
+  digits; put any connective inside it (`code is`, `末四碼是`). It licenses
+  hyphen-joined digit groups, never another joined form (`3.5`, `12:00`).
+- A value is digits, optionally after Latin letters and a hyphen. It
+  matches only as a whole token (`4820` leaves `48200` and `4820-1` alone)
+  but every such token, so pass values long enough to be the code.
+  Letter-hyphen-digit forms (`F-16`, `COVID-19`) never convert unless named.
 
-A caller that holds the code values themselves (a plate tail, an account
-tail, a password from the case record) names them instead, with no word
-needed:
-
-```python
-normalize("請問您4820的車款繳了嗎?", codes=["4820"])
-normalize("預約編號BK-000456。", codes=["BK-000456"])
-```
-
-A value is digits, optionally after Latin letters and a hyphen. Letter-hyphen-digit
-forms (`F-16`, `COVID-19`) never convert on their own; the caller naming the
-exact value is what settles `BK-000456` as a code. A value matches only as a
-whole token, clean on both sides, so `4820` never licenses the front of
-`48200` or a group of `4820-1`. It matches
-every such run, though: a short value like `12` also reads `12天` as 一二天,
-so pass only values long enough to be the code.
-
-When a bug report asks for a new context word, the answer is `code_words`,
-`codes`, or the caller's own template, not a scanner change.
+A request for a new context word is answered with `code_words`, `codes` or
+the caller's template, not a scanner change.
 
 ## Two regex rules
 

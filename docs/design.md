@@ -22,10 +22,10 @@ the digits, or a comma, colon or tilde with a digit on its far side, means
 on its far side is punctuation. `_AMOUNT` is the one amount grammar
 (`1,200`, `1,000.50`, `3.5`) shared by currency, percent and decimals.
 
-`pattern_for(code_words)` returns `TOKEN_PATTERN` with a `code` alternative
-spliced in ahead of everything else, built from the caller's literal words.
-It is `lru_cache`d per word tuple; the no-words case returns the shared
-pattern untouched.
+`pattern_for(code_words, codes)` returns `TOKEN_PATTERN` with a `code`
+alternative spliced in ahead of everything else, built from the caller's
+literal words and values. It is `lru_cache`d; with neither it returns the
+shared pattern untouched.
 
 ### Scanner rules that were paid for
 
@@ -59,7 +59,7 @@ unchanged rather than gluing English words onto 年.
 ## Public API (`voxnorm/__init__.py`)
 
 ```python
-normalize(text, lang=None, *, code_words=()) -> str
+normalize(text, lang=None, *, code_words=(), codes=()) -> str
 ```
 
 An explicit `lang` always wins (`zh`, `zh-TW`, `zh-CN`/`Hans`/`SG`, `en`,

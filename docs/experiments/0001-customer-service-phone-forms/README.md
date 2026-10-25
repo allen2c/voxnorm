@@ -4,8 +4,7 @@
 
 ## Question
 
-A zh-TW customer-service sentence fed to TTS (reported by the
-edge-tts-playground project) misread its phone numbers, national ID and
+A zh-TW customer-service sentence fed to TTS misread its phone numbers, national ID and
 transaction serial. Which of those are scanner gaps the charter allows us to
 close, and which belong to the caller?
 
