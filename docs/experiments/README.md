@@ -26,6 +26,8 @@ docs/experiments/
   never the number alone (`0002-multi-angle-review-of-0.2.1`).
 - **`README.md`** is the record and follows [TEMPLATE.md](TEMPLATE.md):
   question, setup, method, findings, decision.
+- **`findings.md`** (optional) holds the findings when they would push the
+  record past 150 lines.
 - **`probe.py`** (optional) reproduces the findings from a clean checkout
   with `uv run python docs/experiments/<name>/probe.py`. No machine paths,
   no network, no files written outside the experiment directory. A probe

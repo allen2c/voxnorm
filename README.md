@@ -28,18 +28,21 @@ character.
 
 ## What converts
 
-Clock times and time ranges, dates with a four-digit year, phone numbers,
-currency, percentages, temperatures, metric units, room and extension
-numbers, discounts (`85折`), letter-glued identifiers (`A123456789`), masked
-tails (`****1234`), emails and URLs, decimals and integers. Markup tags
-(`<break time="500ms"/>`) pass through untouched. The full table is in
-[docs/charter.md](docs/charter.md).
+Clock times and time ranges, dates, phone numbers, currency with scales
+(`$1.2B`, `NT$1萬2千`), signed percentages, ranges (`10-20%`, `500-600萬`),
+fiscal periods (`Q3 2026`), temperatures, metric and technology units
+(`500ms`, `16GB`), per-unit prices (`80萬/坪`), floor plans (`3房2廳`,
+`3BR/2BA`), room and extension numbers, discounts (`85折`), letter-glued
+identifiers (`A123456789`), masked tails (`****1234`), emails, URLs, IP
+addresses, decimals and integers. Markup tags (`<break time="500ms"/>`) pass
+through untouched. The full table is in
+[docs/charter/what-converts.md](docs/charter/what-converts.md).
 
 ## Never guess
 
 A form converts only when its shape alone settles the reading. `1/2` (a
 fraction) and `8/17` (a date) are the same string, so neither converts;
-`7-11` (a shop) and `3-5` (a range) likewise stay as written. Text left
+`7-11` (a shop) and a bare `3-5` likewise stay as written. Text left
 alone is spoken as written, which is where it started.
 
 ## Language

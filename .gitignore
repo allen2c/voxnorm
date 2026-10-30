@@ -219,3 +219,6 @@ __marimo__/
 
 # Local
 tmp
+
+# Local agent state
+.claude/

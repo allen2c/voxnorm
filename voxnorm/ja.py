@@ -15,7 +15,7 @@ import re
 
 from num2words import num2words
 
-from voxnorm.tokens import clock_parts, currency_amount, speak_address, speak_fiscal_period
+from voxnorm.tokens import ascending, clock_parts, currency_amount, speak_address, speak_fiscal_period
 
 _DIGITS = "〇一二三四五六七八九"
 
@@ -32,7 +32,20 @@ _CURRENCIES = {
 }
 """Spoken after the amount -- Japanese puts every currency word last."""
 
-_MULTIPLIERS = {"千": "千", "천": "千", "萬": "万", "万": "万", "만": "万", "億": "億", "亿": "億", "억": "億"}
+_MULTIPLIERS = {
+    "百": "百",
+    "백": "百",
+    "千": "千",
+    "천": "千",
+    "萬": "万",
+    "万": "万",
+    "만": "万",
+    "億": "億",
+    "亿": "億",
+    "억": "億",
+    "兆": "兆",
+    "조": "兆",
+}
 """A CJK multiplier written after a currency amount, in Japanese glyphs."""
 
 _UNIT_READINGS = {
@@ -57,7 +70,6 @@ _UNIT_READINGS = {
     "sq ft": "{}平方フィート",
     "sq. ft.": "{}平方フィート",
     "sqft": "{}平方フィート",
-    "sf": "{}平方フィート",
     **{symbol: "{}" + symbol for symbol in ("KB", "MB", "GB", "TB", "PB", "kHz", "MHz", "GHz", "Mbps", "Gbps")},
 }
 """The Japanese reading of each metric symbol the `unit` kind accepts, as a
@@ -129,14 +141,18 @@ def _amount_to_ja(amount: str) -> str:
 
 
 def _currency(match: re.Match) -> str:
+    amount = _amount_to_ja(currency_amount(match))
     if match["cur_high"]:
-        amount = f"{_amount_to_ja(match['cur_amt'])}から{_amount_to_ja(match['cur_high'])}"
-    else:
-        amount = _amount_to_ja(currency_amount(match)) + _MULTIPLIERS.get(match["cur_mult"], "")
-    return f"{_SIGNS.get(match['cur_sign'], '')}{amount}{_CURRENCIES[match['cur_sym']]}"
+        if not ascending(match["cur_amt"], match["cur_high"]):
+            return match[0]
+        amount += f"から{_amount_to_ja(currency_amount(match, 'cur_high'))}"
+    multiplier = _MULTIPLIERS.get(match["cur_mult"], "")
+    return f"{_SIGNS.get(match['cur_sign'], '')}{amount}{multiplier}{_CURRENCIES[match['cur_sym']]}{match['cur_per'] or ''}"
 
 
 def _range(match: re.Match) -> str:
+    if not ascending(match["range_low"], match["range_high"]):
+        return match[0]
     spoken = f"{_amount_to_ja(match['range_low'])}から{_amount_to_ja(match['range_high'])}"
     return f"{spoken}パーセント" if match["range_percent"] else spoken
 
@@ -171,7 +187,7 @@ _RULES = {
     "version": lambda match: f"{match[0][0]}" + "点".join(_spoken_int(part) for part in match["ver_num"].split(".")),
     "ip_address": lambda match: "点".join(digits_to_ja(part) for part in match["ip_num"].split(".")),
     "identifier": lambda match: match[0],
-    "fiscal_period": lambda match: speak_fiscal_period(match[0], lambda year: _cardinal(int(year)), digits_to_ja),
+    "fiscal_period": lambda match: speak_fiscal_period(match[0], _spoken_int, digits_to_ja),
     "range": _range,
     "currency": _currency,
     "percent": _percent,

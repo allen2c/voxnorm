@@ -373,7 +373,6 @@ def test_technology_forms(text: str, spoken: str) -> None:
         ("1,200 sq ft", "one thousand two hundred square feet"),
         ("1,200 sq. ft.", "one thousand two hundred square feet"),
         ("1 sq ft", "one square foot"),
-        ("2,500 sf", "two thousand five hundred square feet"),
         ("$450/sqft", "four hundred and fifty dollars per square foot"),
         ("$1,200/mo", "one thousand two hundred dollars per month"),
         ("$10/month", "ten dollars per month"),
@@ -387,4 +386,37 @@ def test_real_estate_forms(text: str, spoken: str) -> None:
 
 @pytest.mark.parametrize("text", ["2-for-1", "10-K", "5/1 ARM", "24/7", "16:9", "4BR/3"])
 def test_ambiguous_finance_forms_stay_written(text: str) -> None:
+    assert normalize(text, lang="en") == text
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("$10-20M", "ten to twenty million dollars"),
+        ("$1-2 billion", "one to two billion dollars"),
+        ("$5M/year", "five million dollars per year"),
+        ("FY05", "FY zero five"),
+        ("1st-class", "first-class"),
+        ("3rd-party", "third-party"),
+        ("3 sf", "three sf"),
+    ],
+)
+def test_review_findings_read(text: str, spoken: str) -> None:
+    assert normalize(text, lang="en") == spoken
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "$100k+",
+        "$5M-$10M",
+        "a $5 billion-dollar deal",
+        "$20-10",
+        "1990-present",
+        "737-max",
+        "11-compatible",
+        "data/2026/year",
+    ],
+)
+def test_review_findings_stay_written(text: str) -> None:
     assert normalize(text, lang="en") == text

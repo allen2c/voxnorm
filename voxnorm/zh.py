@@ -11,7 +11,7 @@ throughout, 台 not 臺.
 
 import re
 
-from voxnorm.tokens import clock_parts, currency_amount, speak_address, speak_fiscal_period
+from voxnorm.tokens import ascending, clock_parts, currency_amount, speak_address, speak_fiscal_period
 
 _DIGITS = "零一二三四五六七八九"
 _SECTION_UNITS = ("", "十", "百", "千")
@@ -38,7 +38,20 @@ CURRENCIES = {
 """(prefix, suffix) around the spoken amount. A bare `$` reads as 元: in this
 package's home locale a bill is in NTD unless the text says otherwise."""
 
-_MULTIPLIERS = {"千": "千", "천": "千", "萬": "萬", "万": "萬", "만": "萬", "億": "億", "亿": "億", "억": "億"}
+_MULTIPLIERS = {
+    "百": "百",
+    "백": "百",
+    "千": "千",
+    "천": "千",
+    "萬": "萬",
+    "万": "萬",
+    "만": "萬",
+    "億": "億",
+    "亿": "億",
+    "억": "億",
+    "兆": "兆",
+    "조": "兆",
+}
 """A currency amount's written multiplier, spoken in Traditional glyphs (the
 zh-CN verbaliser re-spells them)."""
 
@@ -64,7 +77,6 @@ UNIT_READINGS = {
     "sq ft": "{}平方英尺",
     "sq. ft.": "{}平方英尺",
     "sqft": "{}平方英尺",
-    "sf": "{}平方英尺",
     **{symbol: "{}" + symbol for symbol in ("KB", "MB", "GB", "TB", "PB", "kHz", "MHz", "GHz", "Mbps", "Gbps")},
 }
 """The zh-TW reading of each metric symbol the `unit` kind accepts, as a
@@ -183,11 +195,16 @@ def count_to_zh(amount: str) -> str:
 def speak_currency(match: re.Match, currencies: dict[str, tuple[str, str]] = CURRENCIES) -> str:
     """A `currency` match through a symbol table: `-NT$3.5萬` -> 負新台幣三點五萬元."""
     prefix, suffix = currencies[match["cur_sym"]]
+    amount = count_to_zh(currency_amount(match))
     if match["cur_high"]:
-        amount = f"{count_to_zh(match['cur_amt'])}到{count_to_zh(match['cur_high'])}"
-    else:
-        amount = count_to_zh(currency_amount(match)) + _MULTIPLIERS.get(match["cur_mult"], "")
-    return f"{_SIGNS.get(match['cur_sign'], '')}{prefix}{amount}{suffix}"
+        if not ascending(match["cur_amt"], match["cur_high"]):
+            return match[0]
+        amount += f"到{count_to_zh(currency_amount(match, 'cur_high'))}"
+    multiplier = _MULTIPLIERS.get(match["cur_mult"], "")
+    per = match["cur_per"] or ""
+    if per and not per.isascii():
+        per = f"每{per[1:]}"
+    return f"{_SIGNS.get(match['cur_sign'], '')}{prefix}{amount}{multiplier}{suffix}{per}"
 
 
 def _section_to_zh(section: int) -> str:
@@ -256,6 +273,8 @@ def _bare_int(match: re.Match) -> str:
 
 def _range(match: re.Match) -> str:
     # The word after the range counts both ends: 兩到三坪, 一到兩億.
+    if not ascending(match["range_low"], match["range_high"]):
+        return match[0]
     if match["range_percent"]:
         return f"百分之{amount_to_zh(match['range_low'])}到{amount_to_zh(match['range_high'])}"
     ends = [match["range_low"], match["range_high"]]
@@ -312,7 +331,7 @@ _RULES = {
     "video_resolution": lambda match: digits_to_zh(match[0]),
     "bed_bath": lambda match: match[0],
     "settlement": lambda match: f"T加{number_to_zh(int(match['settle_days']))}",
-    "per_unit": lambda match: match[0] if match["per_word"] else "每",
+    "per_unit": lambda match: "每",
     "room_plus": lambda match: f"{count_to_zh(match['plus_first'])}加{count_to_zh(match['plus_second'])}",
     "hyphen_compound": lambda match: match[0],
     "glued_amount": lambda match: count_to_zh(match[0]),

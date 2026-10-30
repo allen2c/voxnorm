@@ -21,8 +21,12 @@ and as a currency amount ($2 → 兩元). After 第 it is an ordinal (第二名)
 list (號 樓 月 年 分 折 期 級 層) it stays 二.
 A discount reads digit by digit (85折 → 八五折, 9折 → 九折, 2折 → 二折),
 in zh-CN too; the other languages read the number as before. 24:00 is
-二十四點.
-A currency multiplier is spoken before the unit (NT$3.5萬 → 新台幣三點五萬元).
+二十四點, and a 24-hour clock stays one (14:00 is 十四點, never 下午兩點).
+A currency multiplier is spoken before the unit (NT$3.5萬 → 新台幣三點五萬元);
+a Latin scale and a compound multiply out into 萬 and 億 (US$1.2B → 十二億美元,
+NT$1萬2千 → 新台幣一萬兩千元), and a fraction drops trailing zeros. A sign is
+正 or 負, a range 到 (500-600萬 → 五百到六百萬, 百分之十到二十), a per-unit
+slash 每 (80萬/坪 → 八十萬每坪), a resolution digit by digit (一零八零p).
 Twelve-hour times take 上午/下午 (12am is 凌晨十二點, 12pm 中午十二點), a
 time range reads 到 between its ends, a temperature is 攝氏/華氏 with 零下
 for a minus, and units use the Taiwan words (公斤, 公分, 公釐, 平方公尺;
@@ -37,7 +41,8 @@ A re-spelling of `zh`'s output through one glyph table, not a second
 algorithm — the readings are the same language. Two entries are more than
 glyphs: 兆 → 万亿 (the mainland reading of 10^12), and `¥` means renminbi
 here, not the yen `zh` reads. Units are the third: the mainland says
-厘米, 毫米 and 平方米 where Taiwan says 公分, 公釐 and 平方公尺. Address
+厘米, 毫米, 平方米 and 纳米 where Taiwan says 公分, 公釐, 平方公尺 and 奈米.
+A ROC date (`115/12/31`) stays written. Address
 symbols are mainland words: `@` 艾特, `/` 斜杠, `-` 横杠, `_` 下划线.
 
 ## en
@@ -52,8 +57,12 @@ thousand, one hundred") are stripped: a TTS voice pauses on them. Spoken
 words are padded from any Latin letter or digit they touch (`4K` → four K).
 An am/pm mark is spelled "a m" / "p m", a time range is "X to Y",
 temperatures are "degrees Celsius/Fahrenheit" with "minus", and units take
-singular or plural words (one kilogram, sixty kilometers per hour). Under a forced `lang="en"` the CJK-anchored kinds (digits before
-號/室/年) stay written rather than gluing English words onto raw anchors.
+singular or plural words (one kilogram, sixty kilometers per hour, sixteen
+gigabytes). A scale is said, not multiplied out ($1.2B → one point two billion
+dollars); a resolution is in digit pairs (ten eighty p); a year in a fiscal
+period is a year (FY26 → FY twenty-six). Under a forced `lang="en"` the
+CJK-anchored kinds (digits before 號/室/年, a range closed by a CJK word) stay
+written rather than gluing English words onto raw anchors.
 Cardinals keep num2words' British "and" (one hundred and one); the US
 variant is deferred until a caller asks. Emails and URLs read "dot", "at",
 "slash", "dash", "underscore", "colon", "question mark", "equals"; a spoken
@@ -67,7 +76,8 @@ the era reading (令和八年). Digit codes use 〇; `:30` is 半; ¥ is 円.
 Twelve-hour times take 午前/午後, a range is から…まで, temperatures are
 摂氏/華氏 with マイナス, and units are katakana (キログラム, 時速…キロメートル). Kana
 pronunciation of the emitted kanji (四時 as よじ) is the TTS frontend's job.
-Address symbols are katakana (ドット, アットマーク with 、 pauses, スラッシュ,
+A range is から, a sign プラス/マイナス; storage and bandwidth units keep
+their letters (十六GB). Address symbols are katakana (ドット, アットマーク with 、 pauses, スラッシュ,
 ハイフン, アンダーバー).
 
 ## ko
@@ -81,7 +91,9 @@ take a space. A year speaks only before 년; under a forced `lang="ko"` a
 `2026年` stays written (ja and zh mirror this for 年). Twelve-hour times
 take 오전/오후 before the native hour, a range is …부터 …까지, temperatures
 are 섭씨/화씨 with 영하, and units are spaced loanwords (오 킬로그램, 시속 …
-킬로미터). Address symbols: `@` 골뱅이 with comma pauses, `.` 점, `/` 슬래시,
+킬로미터). A range is 에서, a sign 플러스/마이너스, `1.2%p` 퍼센트포인트;
+storage and bandwidth units keep their letters (십육GB). Address symbols:
+`@` 골뱅이 with comma pauses, `.` 점, `/` 슬래시,
 `-` 하이픈, `_` 언더바.
 
 ## Adding a language

@@ -14,7 +14,7 @@ import re
 
 from num2words import num2words
 
-from voxnorm.tokens import clock_parts, currency_amount, speak_address, speak_fiscal_period
+from voxnorm.tokens import ascending, clock_parts, currency_amount, speak_address, speak_fiscal_period
 
 _DIGITS = ("공", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구")
 
@@ -40,7 +40,20 @@ _CURRENCIES = {
 }
 """Spoken after the amount -- Korean puts every currency word last."""
 
-_MULTIPLIERS = {"千": "천", "천": "천", "萬": "만", "万": "만", "만": "만", "億": "억", "亿": "억", "억": "억"}
+_MULTIPLIERS = {
+    "百": "백",
+    "백": "백",
+    "千": "천",
+    "천": "천",
+    "萬": "만",
+    "万": "만",
+    "만": "만",
+    "億": "억",
+    "亿": "억",
+    "억": "억",
+    "兆": "조",
+    "조": "조",
+}
 """A CJK multiplier written after a currency amount, as the Korean unit word."""
 
 _UNIT_READINGS = {
@@ -65,7 +78,6 @@ _UNIT_READINGS = {
     "sq ft": "{} 제곱피트",
     "sq. ft.": "{} 제곱피트",
     "sqft": "{} 제곱피트",
-    "sf": "{} 제곱피트",
     **{symbol: "{}" + symbol for symbol in ("KB", "MB", "GB", "TB", "PB", "kHz", "MHz", "GHz", "Mbps", "Gbps")},
 }
 """The Korean reading of each metric symbol the `unit` kind accepts, as a
@@ -139,14 +151,18 @@ def _amount_to_ko(amount: str) -> str:
 
 
 def _currency(match: re.Match) -> str:
+    amount = _amount_to_ko(currency_amount(match))
     if match["cur_high"]:
-        amount = f"{_amount_to_ko(match['cur_amt'])}에서 {_amount_to_ko(match['cur_high'])}"
-    else:
-        amount = _amount_to_ko(currency_amount(match)) + _MULTIPLIERS.get(match["cur_mult"], "")
-    return f"{_SIGNS.get(match['cur_sign'], '')}{amount} {_CURRENCIES[match['cur_sym']]}"
+        if not ascending(match["cur_amt"], match["cur_high"]):
+            return match[0]
+        amount += f"에서 {_amount_to_ko(currency_amount(match, 'cur_high'))}"
+    multiplier = _MULTIPLIERS.get(match["cur_mult"], "")
+    return f"{_SIGNS.get(match['cur_sign'], '')}{amount}{multiplier} {_CURRENCIES[match['cur_sym']]}{match['cur_per'] or ''}"
 
 
 def _range(match: re.Match) -> str:
+    if not ascending(match["range_low"], match["range_high"]):
+        return match[0]
     spoken = f"{_amount_to_ko(match['range_low'])}에서 {_amount_to_ko(match['range_high'])}"
     return f"{spoken} 퍼센트" if match["range_percent"] else spoken
 
@@ -186,7 +202,7 @@ _RULES = {
     "version": lambda match: f"{match[0][0]}" + "점".join(_spoken_int(part) for part in match["ver_num"].split(".")),
     "ip_address": lambda match: " 점 ".join(digits_to_ko(part) for part in match["ip_num"].split(".")),
     "identifier": lambda match: match[0],
-    "fiscal_period": lambda match: speak_fiscal_period(match[0], lambda year: _sino(int(year)), digits_to_ko),
+    "fiscal_period": lambda match: speak_fiscal_period(match[0], _spoken_int, digits_to_ko),
     "range": _range,
     "currency": _currency,
     "percent": _percent,

@@ -878,3 +878,64 @@ def test_joined_forms_never_half_convert(text: str) -> None:
 )
 def test_deliberately_unchanged(text: str, spoken: str) -> None:
     assert normalize(text, lang="zh-TW") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("$10-20M", "一千萬到兩千萬元"),
+        ("NT$10~20萬", "新台幣十到二十萬元"),
+        ("NT$3百萬", "新台幣三百萬元"),
+        ("NT$3兆", "新台幣三兆元"),
+        ("NT$5萬億2千萬", "新台幣五兆零兩千萬元"),
+        ("NT$500/股", "新台幣五百元每股"),
+    ],
+)
+def test_currency_review_findings(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-TW") == spoken
+
+
+# A sum, a rebate, a year span, a score, a tie of two figures: none is a sign
+# or a range, and each stays whole.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "3000元+10%",
+        "10%+5%",
+        "5%/10%",
+        "5kg+3kg",
+        "25°C/30°C",
+        "$3千M",
+        "$100k+",
+        "2024-25年度",
+        "1990-95年",
+        "1800-1900年",
+        "1600~1700年",
+        "滿1000-100元",
+        "100-5%",
+        "5-3%",
+        "8-3天",
+        "$20-10",
+        "10%-20元",
+        "302~305號",
+        "1203~1205室",
+        "1920~1080的",
+    ],
+)
+def test_review_findings_stay_written(text: str) -> None:
+    assert normalize(text, lang="zh-TW") == text
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("台幣100元/日幣500元", "台幣一百元/日幣五百元"),
+        ("售價100元/人民幣70元", "售價一百元/人民幣七十元"),
+        ("50萬/年薪", "五十萬/年薪"),
+        ("100元/股票", "一百元/股票"),
+        ("12/25/日", "12/25/日"),
+        ("1/2/坪", "1/2/坪"),
+    ],
+)
+def test_per_unit_needs_a_whole_unit_after_a_money_word(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-TW") == spoken

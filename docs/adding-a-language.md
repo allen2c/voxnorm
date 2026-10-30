@@ -7,7 +7,10 @@
    - clock times (`:30` as half? native numerals for hours?)
    - phone, room, `alnum`, `code`: digit by digit, zero kept
    - `year`: digit by digit or cardinal
-   - kinds the language cannot speak honestly return `match[0]` unchanged
+   - `currency`: through `currency_amount`, which multiplies out scales and
+     compounds; `cur_high` is a range, `cur_sign` a sign
+   - kinds the language cannot speak honestly return `match[0]` unchanged;
+     `identifier` always does
 3. Register it in `_VERBALIZERS` in `voxnorm/__init__.py`. If the language
    has its own script, add a detection regex to `_resolve_lang`; Latin-script
    languages are explicit-`lang` only.

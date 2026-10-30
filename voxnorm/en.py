@@ -12,7 +12,16 @@ from decimal import Decimal
 
 from num2words import num2words
 
-from voxnorm.tokens import clock_parts, currency_amount, scale_word, speak_address, speak_fiscal_period
+from voxnorm.tokens import (
+    CJK_FACTORS,
+    ascending,
+    clock_parts,
+    currency_amount,
+    plain_amount,
+    scale_word,
+    speak_address,
+    speak_fiscal_period,
+)
 
 _DIGIT_WORDS = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
 
@@ -44,18 +53,6 @@ _CURRENCIES = {
 }
 """(singular, plural) spoken after the amount. A bare `$` reads as plain
 dollars; the text saying which kind is the text's job, not a guess."""
-
-_MULTIPLIERS = {
-    "千": 1_000,
-    "천": 1_000,
-    "萬": 10_000,
-    "万": 10_000,
-    "만": 10_000,
-    "億": 100_000_000,
-    "亿": 100_000_000,
-    "억": 100_000_000,
-}
-"""A CJK multiplier written after a currency amount, as the factor to apply."""
 
 _UNIT_WORDS = {
     "kg": ("kilogram", "kilograms"),
@@ -89,7 +86,6 @@ _UNIT_WORDS = {
     "sq ft": ("square foot", "square feet"),
     "sq. ft.": ("square foot", "square feet"),
     "sqft": ("square foot", "square feet"),
-    "sf": ("square foot", "square feet"),
 }
 """(singular, plural) for each metric symbol the `unit` kind accepts."""
 
@@ -102,14 +98,7 @@ _VIDEO_RESOLUTIONS = {
 }
 """A resolution is said in pairs of digits: 1080p is "ten eighty p"."""
 
-_PER_WORDS = {
-    "mo": "month",
-    "yr": "year",
-    "hr": "hour",
-    "sq ft": "square foot",
-    "sqft": "square foot",
-    "sf": "square foot",
-}
+_PER_WORDS = {"mo": "month", "yr": "year", "hr": "hour", "sq ft": "square foot", "sqft": "square foot"}
 """The spoken word of a shortened unit after a per-unit slash; a word not
 here is said as written (`$10/month`)."""
 
@@ -254,25 +243,26 @@ def _amount_to_en(amount: str) -> str:
 
 
 def _currency(match: re.Match) -> str:
-    return _SIGNS.get(match["cur_sign"], "") + _unsigned_currency(match)
+    if match["cur_high"] and not ascending(match["cur_amt"], match["cur_high"]):
+        return match[0]
+    per = match["cur_per"] or ""
+    if per.isascii() and per:
+        per = f" per {_PER_WORDS.get(per[1:], per[1:])}"
+    return f"{_SIGNS.get(match['cur_sign'], '')}{_unsigned_currency(match)}{per}"
 
 
 def _unsigned_currency(match: re.Match) -> str:
     singular, plural = _CURRENCIES[match["cur_sym"]]
     if match["cur_high"]:
-        return f"{_amount_to_en(match['cur_amt'])} to {_amount_to_en(match['cur_high'])} {plural}"
+        scale = f" {scale_word(match['cur_scale'])}" if match["cur_scale"] else ""
+        low, high = (_amount_to_en(_multiplied(match, group)) for group in ("cur_amt", "cur_high"))
+        return f"{low} to {high}{scale} {plural}"
     if match["cur_scale"]:
         # A scale is said, not multiplied out: one point two billion dollars.
-        written = match["cur_amt"].replace(",", "")
-        written = written.rstrip("0").rstrip(".") if "." in written else written
-        return f"{_amount_to_en(written)} {scale_word(match['cur_scale'])} {plural}"
+        return f"{_amount_to_en(plain_amount(match['cur_amt']))} {scale_word(match['cur_scale'])} {plural}"
     if match["cur_compound"]:
         return f"{_amount_to_en(currency_amount(match))} {plural}"
-    amount = match["cur_amt"].replace(",", "")
-    if match["cur_mult"]:
-        # English has no 萬: multiply out (`NT$3.5萬` is thirty-five thousand).
-        value = Decimal(amount) * _MULTIPLIERS[match["cur_mult"]]
-        amount = str(int(value)) if value == value.to_integral_value() else format(value.normalize(), "f")
+    amount = _multiplied(match, "cur_amt")
     integer, _, fraction = amount.partition(".")
     minor = _MINOR_UNITS.get(match["cur_sym"])
     if minor and len(fraction) == 2 and len(integer) <= 16:
@@ -280,6 +270,14 @@ def _unsigned_currency(match: re.Match) -> str:
         return _major_and_minor(int(integer), int(fraction), (singular, plural), minor)
     unit = singular if amount == "1" else plural
     return f"{_amount_to_en(amount)} {unit}"
+
+
+def _multiplied(match: re.Match, group: str) -> str:
+    # English has no 萬: multiply out (`NT$3.5萬` is thirty-five thousand).
+    amount = match[group].replace(",", "")
+    if not match["cur_mult"]:
+        return amount
+    return format((Decimal(amount) * CJK_FACTORS[match["cur_mult"]]).normalize(), "f")
 
 
 def _major_and_minor(major: int, minor: int, major_units: tuple[str, str], minor_units: tuple[str, str]) -> str:
@@ -293,7 +291,7 @@ def _major_and_minor(major: int, minor: int, major_units: tuple[str, str], minor
 
 def _range(match: re.Match) -> str:
     # A range that closes on a CJK word stays written, as `room_cjk` does.
-    if not match["range_percent"]:
+    if not match["range_percent"] or not ascending(match["range_low"], match["range_high"]):
         return match[0]
     return f"{_amount_to_en(match['range_low'])} to {_amount_to_en(match['range_high'])} percent"
 
@@ -303,13 +301,8 @@ def _percent(match: re.Match) -> str:
     return f"{_SIGNS.get(match['pct_sign'], '')}{_amount_to_en(match['pct_num'])} {word}"
 
 
-def _per_unit(match: re.Match) -> str:
-    word = match["per_word"]
-    return f" per {_PER_WORDS.get(word, word)}" if word else match[0]
-
-
 def _year(written: str) -> str:
-    return f" {num2words(int(written), to='year')} "
+    return f" {digits_to_en(written) if written[0] == '0' else num2words(int(written), to='year')} "
 
 
 def _ordinal(match: re.Match) -> str:
@@ -342,7 +335,7 @@ _RULES = {
     "video_resolution": lambda match: _VIDEO_RESOLUTIONS[match[0]],
     "bed_bath": lambda match: f"{_amount_to_en(match['beds'])} bed {_amount_to_en(match['baths'])} bath",
     "settlement": lambda match: f"T plus {_cardinal(int(match['settle_days']))}",
-    "per_unit": _per_unit,
+    "per_unit": lambda match: match[0],
     "room_plus": lambda match: match[0],
     "hyphen_compound": lambda match: _spoken_int(match[0]),
     "glued_amount": lambda match: _amount_to_en(match[0]),

@@ -53,7 +53,7 @@ words and add the readings the library cannot know; Chinese is spelled out
 in-repo. Per-language decisions: [languages.md](languages.md).
 
 Kinds a language cannot speak honestly stay written: under a forced
-`lang="en"`, the CJK-anchored kinds (`room_cjk`, `year`) return the match
+`lang="en"`, the CJK-anchored kinds (`room_cjk`, `year`, `range`) return the match
 unchanged rather than gluing English words onto 年.
 
 ## Public API (`voxnorm/__init__.py`)

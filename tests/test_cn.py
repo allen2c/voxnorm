@@ -129,6 +129,8 @@ def test_emails_read_piece_by_piece() -> None:
         ("2小时", "两小时"),
         ("2hr", "两小时"),
         ("18：00", "十八点"),
+        ("1.2%p", "一点二个百分点"),
+        ("¥5万亿2千万", "五万亿零两千万元"),
     ],
 )
 def test_finance_technology_real_estate_forms(text: str, spoken: str) -> None:

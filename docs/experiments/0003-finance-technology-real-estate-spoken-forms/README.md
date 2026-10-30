@@ -77,5 +77,17 @@ Not changed:
 - **`B2B`, `2330`, `RTX 4090`, `1122` as a month code**: vocabulary, for `codes=`.
 - **`3Q25`, `1H26`**: no reading was settled, and they stay letter-glued digits.
 
+An independent review of the branch before release found twelve more problems,
+all fixed with regression tests. It narrowed the first design: a sign is
+refused after a number and short word (`3000元+10%`), a range needs ascending
+ends and a closed unit list, `hyphen_compound` takes a closed noun list, a
+per-unit slash needs a money word and a whole unit, and `sf` left the unit list
+(`3 sf` is significant figures).
+
+Known residuals: a form glued to a digit on its left (`3NT$5萬6`) can change on a
+second pass, at about 0.2% of a fuzz built to hit it, as in 0.5.1 at 0.1%; a
+leading `-10% off` reads as a minus; `a1a1…` runs scan quadratically, also as
+in 0.5.1.
+
 Open: readings for ja, ko and zh-CN await real text. Re-run the probe when any
 arrives.

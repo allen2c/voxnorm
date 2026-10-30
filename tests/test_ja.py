@@ -135,12 +135,13 @@ def test_emails_read_piece_by_piece() -> None:
         ("1080p", "千八十p"),
         ("Q3 2026", "Q三 二千二十六"),
         ("v2.4.1", "v二点四点一"),
+        ("FY05", "FY〇五"),
     ],
 )
 def test_finance_and_technology_forms(text: str, spoken: str) -> None:
     assert normalize(text, lang="ja") == spoken
 
 
-@pytest.mark.parametrize("text", ["1ドル=150円", "3BR/2BA", "10-year"])
+@pytest.mark.parametrize("text", ["1ドル=150円", "3BR/2BA", "10-year", "1000円+10%"])
 def test_joined_and_foreign_forms_stay_written(text: str) -> None:
     assert normalize(text, lang="ja") == text

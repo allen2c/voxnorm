@@ -13,7 +13,7 @@ Fixes:
   "one point two billion dollars", not "one point two dollars B". CJK multiplies
   out: `US$1.2B` → 十二億美元, ja 十二億ドル, ko 십이억 달러.
 - Compound amounts: `NT$1萬2千` → 新台幣一萬兩千元, `NT$1億2千萬`, `NT$1萬5` (was
-  a half-conversion).
+  a half-conversion). `NT$3百萬`, `NT$3兆` and stacked `5萬億` read too.
 - Hyphen-joined part codes stay whole (`AB1-CD2E-34`, `L1-L8`), and numbers
   tied by a joiner stay whole (`5F/12F`, `30天+7天`, `2.4GHz/5GHz`).
 - zh, ja, ko: currency fractions drop trailing zeros (`US$132.60` →
@@ -28,18 +28,19 @@ Fixes:
 
 New forms:
 
-- Signs: `+3.2%`, `-1.5%`, `-$5` → 正百分之三點二, 負百分之一點五, 負五元; plus,
+- Signs, not after a number and short word (`3000元+10%` stays written): `+3.2%`,
+  `-1.5%`, `-$5` → 正百分之三點二, 負百分之一點五, 負五元; plus,
   minus; プラス, マイナス; 플러스, 마이너스.
-- Ranges closed by `%`, a currency symbol or a unit: `10-20%`, `20%-30%`,
-  `$10-20`, `500-600萬`, `2-3成`, `25-40坪`, `3-5天`, `3~5億`, `5～10分`,
-  `300~400만원`. `7-11`, `1990-2000年`, `75~85折` stay written.
+- Ascending ranges closed by `%`, a currency symbol or a unit: `10-20%`,
+  `20%-30%`, `$10-20`, `$10-20M`, `500-600萬`, `2-3成`, `25-40坪`, `3-5天`, `3~5億`, `5～10分`,
+  `300~400만원`. `7-11`, `2024-25年度`, `滿1000-100元`, `75~85折` stay written.
 - Fiscal periods: `Q3 2026`, `2026Q3`, `H1 2026`, `FY26`.
 - Units: ms, nm, mAh, kWh, Hz, min, hr, sec, sq ft in every language; en also
   expands KB-PB, kHz-GHz, Mbps, Gbps (sixteen gigabytes), which zh, ja and ko
   keep as written (十六GB).
 - Per-unit prices: `80萬/坪` → 八十萬每坪, `$450/sqft` → dollars per square foot.
 - Floor plans: `3+1房` → 三加一房, `3BR/2BA` → three bed two bath.
-- en: `10-year`, `52-week`.
+- en: a count before a closed list of nouns: `10-year`, `52-week`.
 - `192.168.1.1`, `v1.2.3`, `T+2`, ROC dates `115/12/31` (zh-TW), `1.2%p`.
 
 Unchanged on purpose: clock times keep their 24-hour reading (`14:00` is
@@ -122,101 +123,6 @@ languages, plus one reading decision.
   分 折 期 級 層; 2 of a unit is 兩公斤.
 - en: `9:30am` now reads "nine thirty a m" (was "nine thirty am").
 
-## 0.2.2 — 2026-10-21
+## Older
 
-Correctness only, from the four-angle review
-(`docs/experiments/0002-multi-angle-review-of-0.2.1`). No new written forms
-beyond what the fixes needed (`ordinal`, `url_or_email`).
-
-- Fix: en, ja and ko no longer crash on long digit runs (OverflowError from
-  num2words); past 16 digits every language reads digit by digit.
-- Fix: the `percent` scan was quadratic on comma-heavy input (40 KB took
-  25–50 s); now linear.
-- Fix: a `str` passed as `code_words` raises `TypeError` instead of
-  licensing each of its characters.
-- A comma, colon or point with a word on its far side is punctuation, not
-  part of a form: `金額：1,200元`, `價格12, 謝謝`, `I have 3, 4 apples`,
-  `It costs 5.` and `NT$500/人` now convert. Digits joined by a separator
-  (`3,4`, `3:2`, `10~20%`, `-$5`, `$10-20`, `NT$1,000~2,000`,
-  `分機1234-5678`, `12:30.5`) stay whole instead of half-converting. A
-  tilde after a word joins two complete forms: `1,000元～2,000元`.
-- One amount grammar: `1,000.50` is scanned; `€3,50`, `1,5%`, `0,123` stay
-  written; `$5, $6` keeps its comma.
-- Currency: a written 元 after an amount is not doubled (`NT$12,800元`), and
-  a multiplier is read (`NT$3.5萬` → 新台幣三點五萬元; en multiplies out).
-- Phones: spaces around `#`/轉 extensions, `0912345678#12`, `(02) 2345 6789`,
-  `+1 (800) 555-1234`, three groups after the lead zero; a too-long
-  extension, `+5`, `#3` and `a+123…` stay written.
-- New passthrough kind `url_or_email`; `_` and `=` join forms
-  (`file_v2_12.txt`). Markup needs a tag name and quoted attributes, so
-  `1<x and 5>2` is text. `1920x1080` and `***12***` no longer read as codes.
-- A year speaks only before its own script's 年/년.
-- Readings: zh 2 before 百千萬億兆 and a currency amount of 2 read 兩; en
-  ordinals (`1st` → first, new kind `ordinal`), 13:00 → thirteen hundred,
-  `$1.50` → one dollar and fifty cents, no comma pauses inside cardinals,
-  spoken words padded from adjacent letters and digits (`9:30am`); ko
-  decimal zero is 영.
-- `normalize` is idempotent under a seeded fuzz: guards are symmetric, so a
-  conversion never unblocks its neighbour on a second pass.
-- Packaging: `__all__`, Python 3.10–3.13 and `Typing :: Typed` classifiers,
-  sdist limited to source, tests and docs; the release workflow runs the
-  tests and refuses a tag that differs from `__version__`.
-
-## 0.2.1 — 2026-10-21
-
-- Phone shapes: a leading-zero area code in half- or full-width parentheses
-  (`(02)1234-5678`, `(02) 123-4567`, `（049）2345678`, parentheses dropped);
-  a leading-zero group plus one 6-8 digit group (`0912-345678`,
-  `02-12345678`); a `+` country code (`+886 912 345 678`,
-  `+886-2-1234-5678`, `+886912345678`, `+` spoken: 加 / plus / プラス /
-  플러스); and a `#` or 轉 extension directly after any phone (轉 / extension
-  / 内線 / 내선). `(02)1234-5678` used to read `(零二)` and leave the rest
-  written; `+886 912 345 678` read as four quantities.
-- `code_words` license hyphen-joined digit groups: `撥打 1234-5678` with
-  `code_words=["撥打"]` reads digit by digit (English and Korean keep a pause
-  per group). Without a word it stays written: `1234-5678` is the same
-  string as the year range `1990-2000`.
-- A digit tail after three or more mask characters (`****1234`,
-  `●●●●5678`) reads digit by digit. `**12**` (Markdown bold) is untouched.
-- Angle-bracket markup (`<break time="500ms"/>`, `<emphasis>`) passes through
-  untouched, digits in attributes included; text between tags converts.
-  New `markup` token kind.
-- Fix: `year` and `room_cjk` no longer start inside a hyphen or tilde form,
-  so `1990-2000年` stays whole instead of half-converting to
-  `1990-二零零零年`.
-- Long ungrouped digit runs (`交易序號是12345678901`) still read as a quantity;
-  there is no length threshold, by charter (`docs/charter.md`). Pass
-  `code_words=["序號是"]`.
-
-## 0.2.0 — 2026-09-09
-
-- `normalize(text, code_words=[...])`: caller-supplied words that mark the
-  digit run directly after (whitespace allowed) or directly before them as a
-  code, read digit by digit. The vocabulary that says `4820` is an identifier
-  is open-ended and the caller's, so it is a parameter, not a built-in list.
-- New `alnum` token kind: a digit run glued to a Latin letter on its left
-  (`A123456789`, `H1N1`) is an identifier and reads digit by digit. Only the
-  letter before licenses this; `100km` and `10th` are still quantities.
-- Hyphen, tilde and en-dash join the form characters the loose integer kinds
-  refuse to touch, so `7-11`, `3-5天`, `1234-5678` and `COVID-19` pass
-  through whole instead of half-converting around a stranded hyphen
-  (`七-十一`). Same charter as the colon fix in 0.1.0.
-- English opens a space around letter-glued digit words (`A one two three`).
-
-## 0.1.0
-
-First release.
-
-- Language-neutral token scanner: clock times, ISO dates, phone numbers,
-  currency amounts (NT$/US$/USD/NTD/$/€/¥/₩/£), percentages, room/extension
-  codes, decimals, comma-grouped and bare integers.
-- Verbalisers for Traditional Chinese (zh-TW, spelled out in-repo with the
-  兩/二 reading rules), Simplified Chinese (zh-CN, a re-spelling of the same
-  readings with 万亿 for 10^12 and ¥ as renminbi), English, Japanese, and
-  Korean (native-numeral hours, irregular months) — the latter three on
-  num2words.
-- Script-based language auto-detection (kana → ja, hangul → ko, Han → zh
-  with a distinctive-glyph Simplified check, else en) and an explicit `lang`
-  hint that always wins (`zh-CN`/`zh-Hans`/`zh-SG` select Simplified).
-- Charter: structural only, never guess — ambiguous forms (every slash form,
-  invalid clock strings, colon-adjacent digits) stay written.
+[0.1 to 0.2](docs/changelog/0.1-to-0.2.md).

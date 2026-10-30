@@ -85,6 +85,9 @@ ADDRESS_SYMBOLS = frozenset(".@/-_:?=")
 language. An address holding any other (`&`, `%`, `#`, `~`, `+`) passes
 through whole rather than half-read."""
 
+_CJK = r"぀-ヿ一-鿿가-힣"
+"""Kana, Han and hangul, for a character class."""
+
 _STARTS_CLEAN = r"(?<![\d\-+/.$€¥£₩\#_=])(?<!\d[,:：~～–xX×])"
 """A form may start here: no digit, sign, slash, point, currency symbol, `#`,
 `_` or `=` directly before it (`-5`, `+5`, `1/2`, `.5`, `1.2`, the `5` of a
@@ -96,7 +99,7 @@ multiplication `x` with a digit before *that* (`3,4`, `3:2`, `10~20`,
 
 _ENDS_CLEAN = (
     r"(?![\d\-~～–%@\#_+$€¥£₩=])(?!\.[\dA-Za-z])(?![,:：/xX×]\d)"
-    r"(?![A-Za-z\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7a3]{1,5}(?<![\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7a3]T)[/+=]\d)"
+    rf"(?![A-Za-z°{_CJK}]{{1,5}}(?<![{_CJK}]T)[/+=]\d)"
 )
 """A form may end here: no digit, hyphen, tilde, en-dash, `%`, `@`, `#` or `_`
 directly after it (`7-11`, `10~20`, `a12@x`, a phone's `#123` extension that
@@ -128,12 +131,17 @@ _CLOCK_PARTS = re.compile(r"(\d{1,2})(?:[:：](\d\d))?\ ?(?:([AaPp])(?:\.[Mm]\.|
 
 _CURRENCY_SYMBOL = r"NT\$|US\$|USD|NTD|\$|€|¥|£|₩"
 
-_CJK_MULTIPLIER = "千萬万億亿천만억"
+_CJK_MULTIPLIER = "百千萬万億亿兆백천만억조"
 
-_SIGN_STARTS = r"(?<![\w.\-+/%=$€¥£₩\#])"
-"""A `+` or `-` signs an amount only with no word, digit, point, form character
-or currency symbol before it: `+3.2%`, `漲幅-1.5%`, `(-$5)`, but not the
-ranges `5-3%`, `3%-5%`, or `a-5%`."""
+_LATIN_SCALE = r"(?:[kKmMbBtT]|bn|mn|tn|MM|\ thousand|\ million|\ billion|\ trillion)(?![A-Za-z])"
+
+_JOINED_WORD = f"[A-Za-z{_CJK}]"
+
+_SIGN_STARTS = r"(?<![\w.\-+/%=$€¥£₩\#])" + "".join(rf"(?<!\d{_JOINED_WORD * length})" for length in range(1, 6))
+"""A `+` or `-` signs an amount only with no Latin word, digit, point, form
+character or currency symbol before it, and no number and short word either,
+the span `_ENDS_CLEAN` ties: `+3.2%`,
+`漲幅-1.5%`, `(-$5)`, but not `5-3%`, `a-5%`, or the sum `3000元+10%`."""
 
 _RANGE_TAIL_AFTER_HYPHEN = (
     r"[萬万億亿兆千百成坪歲岁天倍層层點点元塊块円만억천평세층]|年|週|周|個月|个月|小時|小时|分鐘|分钟|년|개월"
@@ -141,9 +149,21 @@ _RANGE_TAIL_AFTER_HYPHEN = (
 """What must follow `D-D` for the hyphen to be a range. A closed list: the
 hyphen alone is a shop (`7-11`), a phone stub or a score."""
 
-_RANGE_TAIL_AFTER_TILDE = r"(?!折)[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7a3]"
-"""A tilde between numbers is a range before any CJK word; 折 reads digit by
-digit, which a range cannot carry (`75~85折`)."""
+_RANGE_TAIL_AFTER_TILDE = rf"{_RANGE_TAIL_AFTER_HYPHEN}|[分秒月日人名位件張张次間间個个季일분초명]|영업일|時間"
+"""What must follow `D~D`. A tilde is never a shop or a score, so 分 and 月 join
+the list; 折, 號 and 室 stay off it, whose numbers read digit by digit."""
+
+_PER_UNIT_CJK = rf"[坪月年人天日張张股晚](?![A-Za-z/{_CJK}])"
+"""A unit after a per-unit slash, with no word after it to change its meaning
+(`100元/股`, but not `100元/股票` or `台幣100元/日幣500元`)."""
+
+_PER_UNIT_WORD = r"(?:mo|month|yr|year|hr|hour|night|day|week|share|person|unit|sq\ ft|sqft)(?![A-Za-z\d/])"
+
+_HYPHEN_NOUN = (
+    "year|month|week|day|hour|minute|second|quarter|night|star|bedroom|bathroom|room|car|core|mile|foot|point"
+)
+"""English nouns a hyphen turns into an adjective with a count (`10-year`). A
+closed list: `1990-present` and `737-max` are not counts."""
 
 _OCTET = r"(?:25[0-5]|2[0-4]\d|1?\d?\d)"
 
@@ -176,7 +196,7 @@ and a letter."""
 
 _COMPOUND_PART = re.compile(r"(\d+)([^\d]*)")
 
-_COMPOUND_FACTORS = {
+CJK_FACTORS = {
     "百": 100,
     "백": 100,
     "千": 1_000,
@@ -187,7 +207,10 @@ _COMPOUND_FACTORS = {
     "億": 100_000_000,
     "亿": 100_000_000,
     "억": 100_000_000,
+    "兆": 1_000_000_000_000,
+    "조": 1_000_000_000_000,
 }
+"""A CJK multiplier as the factor it applies."""
 
 _FISCAL_PIECE = re.compile(r"(?:19|20)\d\d|(?<=FY)\d\d|\d")
 
@@ -239,42 +262,42 @@ TOKEN_PATTERN = re.compile(
       )
     | (?P<version>(?<![A-Za-z\d])[vV](?P<ver_num>\d+(?:\.\d+){{2,3}})(?![\d\-]|\.\d))
     | (?P<ip_address>(?<![\d.])(?P<ip_num>{_OCTET}(?:\.{_OCTET}){{3}})(?![\d\-]|\.\d|[:：]\d))
-    | (?P<identifier>(?<![A-Za-z\d\-_./@\#+])(?=[A-Za-z\d\-]*(?:[A-Za-z]\d|\d[A-Za-z]))[A-Za-z\d]+(?:-[A-Za-z\d]+)+(?![A-Za-z\d\-_@]))
+    | (?P<identifier>(?<![A-Za-z\d\-_./@\#+])(?=[A-Za-z\d\-]*[A-Za-z]\d)[A-Za-z\d]+(?:-[A-Za-z\d]+)+(?![A-Za-z\d\-_@]))
     | (?P<fiscal_period>
         (?<![A-Za-z\d])(?:Q[1-4]|H[12])\ (?:19|20)\d\d{_ENDS_CLEAN}
       | {_STARTS_CLEAN}(?:19|20)\d\dQ[1-4](?![A-Za-z\d])
       | (?<![A-Za-z\d])FY(?:(?:19|20)\d\d|\d\d){_ENDS_CLEAN}
       )
     | (?P<range>
-        {_STARTS_CLEAN}(?!(?:19|20)\d\d[-~～–](?:19|20)\d\d)
-        (?P<range_low>{_AMOUNT})(?:(?P<range_dash>%?[-–])|[~～])(?P<range_high>{_AMOUNT})(?P<range_percent>\ ?%)?{_ENDS_CLEAN}
-        (?(range_percent)|(?(range_dash)(?={_RANGE_TAIL_AFTER_HYPHEN})|(?={_RANGE_TAIL_AFTER_TILDE})))
+        {_STARTS_CLEAN}(?!\d{{4}}[-~～–]\d+\ ?[年년])
+        (?P<range_low>{_AMOUNT})(?:(?P<range_low_percent>%)?(?P<range_dash>[-–])|[~～])(?P<range_high>{_AMOUNT})(?P<range_percent>\ ?%)?{_ENDS_CLEAN}
+        (?(range_percent)|(?(range_low_percent)(?!)|(?(range_dash)(?={_RANGE_TAIL_AFTER_HYPHEN})|(?={_RANGE_TAIL_AFTER_TILDE}))))
       )
     | (?P<currency>
         (?:{_SIGN_STARTS}(?P<cur_sign>[-+])(?={_CURRENCY_SYMBOL})|(?<![\d\-+/.$€¥£₩\#_=]))
         (?P<cur_sym>{_CURRENCY_SYMBOL})\ ?
         (?:
-          (?=\d{{1,4}}[千백百천{_CJK_MULTIPLIER}]+\d)(?P<cur_compound>(?:\d{{1,4}}[千백百천{_CJK_MULTIPLIER}]+)+\d?)(?!\d)
-        | (?P<cur_amt>{_AMOUNT})
-          (?:
-            [-~～–](?P<cur_high>{_AMOUNT})(?![{_CJK_MULTIPLIER}])
-          | (?P<cur_mult>[{_CJK_MULTIPLIER}])?(?![{_CJK_MULTIPLIER}])(?P<cur_scale>(?:[kKmMbBtT]|bn|mn|tn|MM|\ thousand|\ million|\ billion|\ trillion)(?![A-Za-z]))?
-          )
+          (?=\d{{1,4}}(?:[{_CJK_MULTIPLIER}]+\d|[{_CJK_MULTIPLIER}]{{2}}))(?P<cur_compound>(?:\d{{1,4}}[{_CJK_MULTIPLIER}]+)+\d?)(?!\d)
+        | (?P<cur_amt>{_AMOUNT})(?:[-~～–](?P<cur_high>{_AMOUNT}))?
+          (?P<cur_mult>[{_CJK_MULTIPLIER}])?(?![{_CJK_MULTIPLIER}])
+          (?(cur_mult)(?![A-Za-z])|(?P<cur_scale>{_LATIN_SCALE})?(?(cur_scale)|(?!{_LATIN_SCALE})))
         )
-        (?:\ ?元)?{_ENDS_CLEAN}
+        (?:\ ?元)?
+        (?P<cur_per>/(?:{_PER_UNIT_CJK}|{_PER_UNIT_WORD}))?
+        {_ENDS_CLEAN}
       )
-    | (?P<percent>(?:{_SIGN_STARTS}(?P<pct_sign>[-+])|{_STARTS_CLEAN})(?P<pct_num>{_AMOUNT})\ ?%(?P<pct_point>p(?![A-Za-z\d]))?)
+    | (?P<percent>(?:{_SIGN_STARTS}(?P<pct_sign>[-+])|{_STARTS_CLEAN})(?P<pct_num>{_AMOUNT})\ ?%(?P<pct_point>p(?![A-Za-z\d]))?(?![/+=\-]\d))
     | (?P<temperature>
         (?:(?<![\w.\-])(?P<temp_minus>-)|{_STARTS_CLEAN})
-        (?P<temp_num>\d+(?:\.\d+)?)\ ?(?P<temp_unit>°\ ?[CF]|℃|℉)(?![A-Za-z])
+        (?P<temp_num>\d+(?:\.\d+)?)\ ?(?P<temp_unit>°\ ?[CF]|℃|℉)(?![A-Za-z])(?![/+=\-]\d)
       )
-    | (?P<unit>{_STARTS_CLEAN}(?P<unit_num>{_AMOUNT})\ ?(?P<unit_sym>km/h|kg|km|kHz|kWh|KB|cm|mm|mg|ml|mL|mAh|ms|min|m²|㎡|nm|MHz|MB|Mbps|GHz|GB|Gbps|TB|PB|Hz|hr|sec|sq\.\ ft\.|sq\ ft|sqft|sf)(?![\w²/]))
+    | (?P<unit>{_STARTS_CLEAN}(?P<unit_num>{_AMOUNT})\ ?(?P<unit_sym>km/h|kg|km|kHz|kWh|KB|cm|mm|mg|ml|mL|mAh|ms|min|m²|㎡|nm|MHz|MB|Mbps|GHz|GB|Gbps|TB|PB|Hz|hr|sec|sq\.\ ft\.|sq\ ft|sqft)(?![\w²/])(?![+=\-]\d))
     | (?P<video_resolution>{_STARTS_CLEAN}(?:480|720|1080|1440|2160)(?=[pP](?![A-Za-z\d])))
     | (?P<bed_bath>{_STARTS_CLEAN}(?P<beds>\d(?:\.\d)?)(?:BR|BD|br|bd)(?:\ ?/\ ?|\ )(?P<baths>\d(?:\.\d)?)(?:BA|ba)(?![A-Za-z\d]))
     | (?P<settlement>(?<![A-Za-z\d.\-+])T\+(?P<settle_days>\d{{1,2}}){_ENDS_CLEAN})
-    | (?P<per_unit>(?<=[\d萬万億亿元塊块%])/(?:(?=[坪月年人天日張张股晚](?![A-Za-z/]))|(?P<per_word>mo|month|yr|year|hr|hour|night|day|week|share|person|unit|sq\ ft|sqft|sf)(?![A-Za-z\d/])))
+    | (?P<per_unit>(?<=[萬万億亿元塊块%])/(?={_PER_UNIT_CJK}))
     | (?P<room_plus>{_STARTS_CLEAN}(?P<plus_first>\d)\+(?P<plus_second>\d)(?=[房室]))
-    | (?P<hyphen_compound>(?<![A-Za-z]){_STARTS_CLEAN}[1-9]\d{{0,3}}(?=-[a-z]{{2,}}(?:-[a-z]+)*(?![A-Za-z\d_\-@]|\.[A-Za-z\d])))
+    | (?P<hyphen_compound>(?<![A-Za-z]){_STARTS_CLEAN}[1-9]\d{{0,2}}(?=-(?:{_HYPHEN_NOUN})(?:-[a-z]+)*(?![A-Za-z\d_\-@]|\.[A-Za-z\d])))
     | (?P<ordinal>(?<![A-Za-z]){_STARTS_CLEAN}(?P<ord_num>\d{{1,6}})(?P<ord_suffix>st|nd|rd|th|ST|ND|RD|TH)(?![A-Za-z\d]))
     | (?P<room_en>(?P<room_word>(?<![A-Za-z])(?:[Rr]oom|[Ee]xt\.?)|房號|房号|分機|分机)(?P<room_link>\ ?(?:[是為为:：]\ ?)?)\#?(?P<room_num>\d{{2,5}}){_ENDS_CLEAN})
     | (?P<glued_amount>(?<=[A-Za-z])(?<!\d[xX]){_AMOUNT}(?=[塊块元倍萬万億亿]))
@@ -354,8 +377,8 @@ TOKEN_PATTERN = re.compile(
 - `version` / `ip_address` — dotted digits the residue refuses: a `v` and
   three or four fields (`v1.2.3`), or four fields each 0-255 (`192.168.1.1`,
   digit by digit). A bare `1.2.3` and an address with a port stay written.
-- `identifier` — hyphen-joined pieces with a letter and a digit touching in
-  one of them (`AB1-CD2E-34`, `L1-L8`, `12-HBM4`) are one part code. It
+- `identifier` — hyphen-joined pieces with a digit after a letter in one of
+  them (`AB1-CD2E-34`, `L1-L8`, `12-HBM4`) are one part code. It
   passes through whole; without it the middle piece read as letter-glued
   digits (`AB1-CD二E-34`).
 - `fiscal_period` — a quarter or half before a year (`Q3 2026`, `H1 2026`),
@@ -363,10 +386,11 @@ TOKEN_PATTERN = re.compile(
   `Q3` is letter-glued digits and already reads right; `3Q25` and `1H26` stay
   that way too.
 - `range` — two amounts joined by a hyphen, en-dash or tilde, read as "to".
-  A `%` closes any of them (`10-20%`, `20%-30%`). Without one, a hyphen needs
-  a unit from `_RANGE_TAIL_AFTER_HYPHEN` after it (`500-600萬`, `25-40坪`) and
-  a tilde any CJK word but 折; the unit stays outside the match. Two
-  19xx/20xx years are a year range, which stays written.
+  A `%` closes any of them (`10-20%`, `20%-30%`). Without one, a unit from a
+  closed list must follow (`500-600萬`, `25-40坪`) and stays outside the match.
+  A four-digit low end before 年 is a year range, which stays written
+  (`2024-25年度`), and a verbaliser leaves a descending pair written
+  (`ascending`), because `5-3%` is a subtraction.
 - `currency` — symbol before amount, the only order this package reads. A
   multiplier written after the amount (`cur_mult`: 千, 萬/万, 億/亿, and
   Korean 천/만/억) belongs to it (`NT$3.5萬`, `₩3만`), and a 元 after that is
@@ -375,11 +399,13 @@ TOKEN_PATTERN = re.compile(
   `NT$1億2千萬`, the spoken shorthand `NT$1萬5`) multiplies out, and the amount
   may not stop in front of a second multiplier. A Latin scale (`cur_scale`:
   `$1.2B`, `£3bn`, `$5K`, `$1.5 million`) is settled by the symbol alone, the
-  same letter after a bare number stays a letter. A second amount
-  (`cur_high`) is a range (`$10-20`), and a `+` or `-` directly before the
+  same letter after a bare number stays a letter; when a scale cannot end the
+  form (`$100k+`, `$5M-$10M`) the whole form stays written. A second amount
+  (`cur_high`) is a range sharing the scale (`$10-20M`), and a `+` or `-` directly before the
   symbol is a sign (`cur_sign`) under the rule of `_SIGN_STARTS`.
 - `percent` — a number and `%`, signed like `currency` (`+3.2%`, `-1.5%`). A
-  `p` right after is a percentage point (`1.2%p`).
+  `p` right after is a percentage point (`1.2%p`). A joiner and a digit after
+  it ties it to the next number (`10%+5%`), like `_ENDS_CLEAN`.
 - `temperature` — a number with a degree-Celsius or -Fahrenheit sign
   (`25°C`, `25 °F`, `25℃`). A `-` directly before it is a minus only when
   no digit, letter or point precedes the `-` (`-5°C`, `氣溫-5°C`); in
@@ -395,13 +421,13 @@ TOKEN_PATTERN = re.compile(
 - `bed_bath` — a bedroom and bathroom pair (`3BR/2BA`, `3bd 2ba`). Only the
   pair settles `BA`; a lone `3BR` stays a number and letters.
 - `settlement` — `T+2`, a settlement date: T stays and the number is spoken.
-- `per_unit` — a slash after a number or a money word, before a closed list of
-  units (`80萬/坪`, `$10/month`). zh reads 每; en reads "per" and consumes the
-  word to expand it (`per_word`). Other languages leave the slash.
+- `per_unit` — a slash after a money word or `%`, before a unit from a closed
+  list (`80萬/坪`). zh reads 每; the others leave the slash. After a currency
+  form the slash belongs to it (`cur_per`: `$450/sqft`, `NT$500/人`), which
+  also takes English words.
 - `room_plus` — `3+1房`, a floor plan with a flexible room.
-- `hyphen_compound` — a number before a lowercase hyphen word (`10-year`,
-  `52-week`), an English adjective. Only English speaks it; `2-for-1` ends on a
-  digit and stays written.
+- `hyphen_compound` — a count before a noun from `_HYPHEN_NOUN` (`10-year`,
+  `52-week`), an English adjective. Only English speaks it.
 - `ordinal` — an English ordinal suffix glued to a number (`1st`, `22nd`,
   `10th`). The verbaliser reads it only when the suffix matches the number
   (`1st`, not `1th`); a mismatched one, and every non-English language,
@@ -522,20 +548,32 @@ def pattern_for(code_words: tuple[str, ...], codes: tuple[str, ...] = ()) -> re.
     return re.compile(code + TOKEN_PATTERN.pattern, re.VERBOSE | re.ASCII)
 
 
-def currency_amount(match: re.Match) -> str:
+def currency_amount(match: re.Match, group: str = "cur_amt") -> str:
     """A `currency` match's amount as a plain decimal string a verbaliser can read.
 
     Commas drop, and trailing zeros of the fraction with them (`132.60` reads
     point six). A Latin scale and a compound amount multiply out, because CJK
     groups in 萬 and 億 (`1.2B` is 十二億, `1萬2千` is 12000); a CJK multiplier
-    stays out of this, each verbaliser speaks it.
+    stays out of this, each verbaliser speaks it. `group` is `cur_high` for the
+    top of a range, which shares the scale.
     """
     if match["cur_compound"]:
         return str(_compound_value(match["cur_compound"]))
-    amount = match["cur_amt"].replace(",", "")
     if match["cur_scale"]:
-        scaled = Decimal(amount) * _LATIN_SCALES[match["cur_scale"].strip()][1]
-        return format(scaled.normalize(), "f")
+        written = match[group].replace(",", "")
+        return format((Decimal(written) * _LATIN_SCALES[match["cur_scale"].strip()][1]).normalize(), "f")
+    return plain_amount(match[group])
+
+
+def ascending(low: str, high: str) -> bool:
+    """Whether two written amounts can be a range: `5-3%` is a subtraction or a
+    score, and `滿1000-100元` a rebate, so a verbaliser leaves them written."""
+    return Decimal(low.replace(",", "")) < Decimal(high.replace(",", ""))
+
+
+def plain_amount(written: str) -> str:
+    """A written amount without commas or a fraction's trailing zeros: `1,200.50` -> 1200.5."""
+    amount = written.replace(",", "")
     return amount.rstrip("0").rstrip(".") if "." in amount else amount
 
 
@@ -613,21 +651,25 @@ def speak_address(match: re.Match, symbol_words: dict[str, str], read_digits: Ca
 def _compound_value(written: str) -> int:
     """A compound CJK amount as an integer: `1億2千萬` -> 120000000.
 
-    A section gathers until 萬 or 億 closes it into the total. A last bare
-    digit is one unit down from the unit before it (`1萬5` is 15000).
+    百 and 千 build a section; 萬 and up, stacked or alone, close the section
+    into the total (`5万亿`). A last bare digit is one unit down from the unit
+    before it (`1萬5` is 15000).
     """
-    total = section = factor = 0
+    total = section = last_factor = 0
     for digits, units in _COMPOUND_PART.findall(written):
         value = int(digits)
         if not units:
-            section += value * factor // 10
+            section += value * last_factor // 10
             continue
+        closing = 1
         for unit in units:
-            factor = _COMPOUND_FACTORS[unit]
-            if factor >= 10_000:
-                total += (section + value) * factor
-                section = value = 0
+            last_factor = CJK_FACTORS[unit]
+            if last_factor >= 10_000:
+                closing *= last_factor
             else:
-                value *= factor
+                value *= last_factor
         section += value
+        if closing > 1:
+            total += section * closing
+            section = 0
     return total + section
