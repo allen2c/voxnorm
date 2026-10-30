@@ -34,7 +34,7 @@ Python and stays debuggable.
 
 The charter is **structural only, never guess**. A form whose reading is
 ambiguous does not convert: `1/2` the fraction and `8/17` the date are the
-same slash string, so no slash form converts at all. What is not converted is
+same slash string, so neither converts. What is not converted is
 simply spoken as written, which is where it started.
 
 Language is decided per call: an explicit `lang` wins, otherwise script
@@ -56,7 +56,7 @@ from collections.abc import Iterable
 from voxnorm import cn, en, ja, ko, zh
 from voxnorm.tokens import TOKEN_KINDS, pattern_for
 
-__version__ = "0.5.1"
+__version__ = "0.6.0"
 __all__ = ["__version__", "normalize"]
 
 _VERBALIZERS = {

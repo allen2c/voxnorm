@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.6.0 — 2026-10-30
+
+Finance, technology and real-estate forms from calls and podcasts
+(`docs/experiments/0003-finance-technology-real-estate-spoken-forms`), in all
+five languages. Several forms that stayed written now convert; the charter is
+updated line by line.
+
+Fixes:
+
+- Currency scales: `$1.2B`, `$500M`, `$5K`, `£3bn`, `$1.5 million` read
+  "one point two billion dollars", not "one point two dollars B". CJK multiplies
+  out: `US$1.2B` → 十二億美元, ja 十二億ドル, ko 십이억 달러.
+- Compound amounts: `NT$1萬2千` → 新台幣一萬兩千元, `NT$1億2千萬`, `NT$1萬5` (was
+  a half-conversion).
+- Hyphen-joined part codes stay whole (`AB1-CD2E-34`, `L1-L8`), and numbers
+  tied by a joiner stay whole (`5F/12F`, `30天+7天`, `2.4GHz/5GHz`).
+- zh, ja, ko: currency fractions drop trailing zeros (`US$132.60` →
+  一百三十二點六美元, `$5.00` → 五元).
+- zh, zh-CN: 兩 before 房 廳/厅 衛/卫 室 坪 戶/户 季 股 成 奈米/纳米 (`3房2廳2衛` →
+  三房兩廳兩衛). `2段` stays 二段.
+- `18：00`, a full-width colon, is a clock time.
+- `EPS26塊`, `DBR22倍`: a letter-glued amount before a money or multiple word
+  is a quantity (EPS二十六塊).
+- `1080p` and the other standard resolutions read as names: 一零八零p, ten
+  eighty p.
+
+New forms:
+
+- Signs: `+3.2%`, `-1.5%`, `-$5` → 正百分之三點二, 負百分之一點五, 負五元; plus,
+  minus; プラス, マイナス; 플러스, 마이너스.
+- Ranges closed by `%`, a currency symbol or a unit: `10-20%`, `20%-30%`,
+  `$10-20`, `500-600萬`, `2-3成`, `25-40坪`, `3-5天`, `3~5億`, `5～10分`,
+  `300~400만원`. `7-11`, `1990-2000年`, `75~85折` stay written.
+- Fiscal periods: `Q3 2026`, `2026Q3`, `H1 2026`, `FY26`.
+- Units: ms, nm, mAh, kWh, Hz, min, hr, sec, sq ft in every language; en also
+  expands KB-PB, kHz-GHz, Mbps, Gbps (sixteen gigabytes), which zh, ja and ko
+  keep as written (十六GB).
+- Per-unit prices: `80萬/坪` → 八十萬每坪, `$450/sqft` → dollars per square foot.
+- Floor plans: `3+1房` → 三加一房, `3BR/2BA` → three bed two bath.
+- en: `10-year`, `52-week`.
+- `192.168.1.1`, `v1.2.3`, `T+2`, ROC dates `115/12/31` (zh-TW), `1.2%p`.
+
+Unchanged on purpose: clock times keep their 24-hour reading (`14:00` is
+十四點; `12:00` and `24:00` keep theirs); `15K`, `10W`, `25bp`, `12F`, `1:1`,
+`24/7` and `B2B` stay as they were.
+
 ## 0.5.1 — 2026-10-25
 
 Docs only; no behaviour change.
