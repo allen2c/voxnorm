@@ -57,3 +57,4 @@ docs/experiments/
 | --- | --- | --- | --- | --- |
 | [0001-customer-service-phone-forms](0001-customer-service-phone-forms/README.md) | 2026-10-21 | 0.2.0 | Why do zh-TW customer-service phone numbers, IDs and serials read wrong? | decided, shipped in 0.2.1 |
 | [0002-multi-angle-review-of-0.2.1](0002-multi-angle-review-of-0.2.1/README.md) | 2026-10-21 | 0.2.1 | What is still wrong, from four independent angles? | decided; 0.2.2 and 0.3.0 items shipped |
+| [0003-finance-technology-real-estate-spoken-forms](0003-finance-technology-real-estate-spoken-forms/README.md) | 2026-10-30 | 0.5.1 | What do finance, technology and real-estate calls and podcasts write that voxnorm misreads? | decided, 0.6.0 |

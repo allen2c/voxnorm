@@ -27,6 +27,7 @@ _TO_SIMPLIFIED = str.maketrans(
         "韓": "韩",
         "圓": "元",
         "轉": "转",
+        "負": "负",
         "攝": "摄",
         "華": "华",
     }
@@ -42,9 +43,15 @@ _UNIT_READINGS = {
     "mm": "{}毫米",
     "m²": "{}平方米",
     "㎡": "{}平方米",
+    "nm": "{}纳米",
+    "mAh": "{}毫安",
+    "kWh": "{}千瓦时",
+    "Hz": "{}赫兹",
+    "min": "{}分钟",
+    "hr": "{}小时",
 }
 """The mainland metric words where they are words, not glyphs, apart from
-zh-TW (公分 / 厘米, 公釐 / 毫米, 平方公尺 / 平方米)."""
+zh-TW (公分 / 厘米, 公釐 / 毫米, 平方公尺 / 平方米, 奈米 / 纳米)."""
 
 
 _ADDRESS_WORDS = {
@@ -61,11 +68,16 @@ _ADDRESS_WORDS = {
 小老鼠, and the slash, hyphen and underscore are words, not glyphs, apart."""
 
 
+_CURRENCIES = {**zh.CURRENCIES, "¥": ("", "元")}
+"""In the mainland locale ¥ is renminbi (元), not the yen zh-TW reads."""
+
+
 def verbalize(kind: str, match: re.Match) -> str:
     """Spell the token `match` of class `kind` the way zh-CN says it."""
-    if kind == "currency" and match["cur_sym"] == "¥":
-        # In the mainland locale ¥ is renminbi (元), not the yen zh-TW reads.
-        return f"{zh.currency_amount_to_zh(match).translate(_TO_SIMPLIFIED)}元"
+    if kind == "currency":
+        return zh.speak_currency(match, _CURRENCIES).translate(_TO_SIMPLIFIED)
+    if kind == "roc_date":
+        return match[0]
     if kind == "url_or_email":
         return speak_address(match, _ADDRESS_WORDS, zh.digits_to_zh)
     if kind == "unit":

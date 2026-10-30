@@ -15,7 +15,7 @@ import re
 
 from num2words import num2words
 
-from voxnorm.tokens import clock_parts, speak_address
+from voxnorm.tokens import clock_parts, currency_amount, speak_address, speak_fiscal_period
 
 _DIGITS = "〇一二三四五六七八九"
 
@@ -46,10 +46,25 @@ _UNIT_READINGS = {
     "mL": "{}ミリリットル",
     "m²": "{}平方メートル",
     "㎡": "{}平方メートル",
+    "ms": "{}ミリ秒",
+    "nm": "{}ナノメートル",
+    "mAh": "{}ミリアンペアアワー",
+    "kWh": "{}キロワットアワー",
+    "Hz": "{}ヘルツ",
+    "min": "{}分",
+    "hr": "{}時間",
+    "sec": "{}秒",
+    "sq ft": "{}平方フィート",
+    "sq. ft.": "{}平方フィート",
+    "sqft": "{}平方フィート",
+    "sf": "{}平方フィート",
+    **{symbol: "{}" + symbol for symbol in ("KB", "MB", "GB", "TB", "PB", "kHz", "MHz", "GHz", "Mbps", "Gbps")},
 }
 """The Japanese reading of each metric symbol the `unit` kind accepts, as a
 template around the spoken number (speed is 時速 in front)."""
 
+
+_SIGNS = {"-": "マイナス", "+": "プラス"}
 
 _ADDRESS_WORDS = {
     ".": " ドット ",
@@ -113,6 +128,24 @@ def _amount_to_ja(amount: str) -> str:
     return f"{spoken}点{digits_to_ja(fraction)}" if fraction else spoken
 
 
+def _currency(match: re.Match) -> str:
+    if match["cur_high"]:
+        amount = f"{_amount_to_ja(match['cur_amt'])}から{_amount_to_ja(match['cur_high'])}"
+    else:
+        amount = _amount_to_ja(currency_amount(match)) + _MULTIPLIERS.get(match["cur_mult"], "")
+    return f"{_SIGNS.get(match['cur_sign'], '')}{amount}{_CURRENCIES[match['cur_sym']]}"
+
+
+def _range(match: re.Match) -> str:
+    spoken = f"{_amount_to_ja(match['range_low'])}から{_amount_to_ja(match['range_high'])}"
+    return f"{spoken}パーセント" if match["range_percent"] else spoken
+
+
+def _percent(match: re.Match) -> str:
+    word = "パーセントポイント" if match["pct_point"] else "パーセント"
+    return f"{_SIGNS.get(match['pct_sign'], '')}{_amount_to_ja(match['pct_num'])}{word}"
+
+
 def _phone(match: re.Match) -> str:
     # Parentheses and separators drop out; the `+` and an extension (内線) do not.
     spoken = ("プラス" if match["phone_plus"] else "") + digits_to_ja(match["phone_num"])
@@ -134,10 +167,21 @@ _RULES = {
     "time": lambda match: _clock(int(match["time_h"]), int(match["time_m"])),
     "iso_date": _iso_date,
     "phone": _phone,
-    "currency": lambda match: (
-        f"{_amount_to_ja(match['cur_amt'])}{_MULTIPLIERS.get(match['cur_mult'], '')}{_CURRENCIES[match['cur_sym']]}"
-    ),
-    "percent": lambda match: f"{_amount_to_ja(match['pct_num'])}パーセント",
+    "roc_date": lambda match: match[0],
+    "version": lambda match: f"{match[0][0]}" + "点".join(_spoken_int(part) for part in match["ver_num"].split(".")),
+    "ip_address": lambda match: "点".join(digits_to_ja(part) for part in match["ip_num"].split(".")),
+    "identifier": lambda match: match[0],
+    "fiscal_period": lambda match: speak_fiscal_period(match[0], lambda year: _cardinal(int(year)), digits_to_ja),
+    "range": _range,
+    "currency": _currency,
+    "percent": _percent,
+    "video_resolution": lambda match: _spoken_int(match[0]),
+    "bed_bath": lambda match: match[0],
+    "settlement": lambda match: f"Tプラス{_cardinal(int(match['settle_days']))}",
+    "per_unit": lambda match: match[0],
+    "room_plus": lambda match: match[0],
+    "hyphen_compound": lambda match: match[0],
+    "glued_amount": lambda match: _amount_to_ja(match[0]),
     "temperature": lambda match: (
         ("華氏" if match["temp_unit"] in ("℉", "°F", "° F") else "摂氏")
         + ("マイナス" if match["temp_minus"] else "")

@@ -121,3 +121,28 @@ def test_code_words_keep_hyphen_group_pauses() -> None:
 
 def test_emails_read_piece_by_piece() -> None:
     assert normalize("a12345.user@example.com.tw", lang="ko") == "a일이삼사오 점 user, 골뱅이, example 점 com 점 tw"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("$1.2B", "십이억 달러"),
+        ("-3.2%", "마이너스 삼점이 퍼센트"),
+        ("1.2%p", "일점이 퍼센트포인트"),
+        ("2~4%", "이에서 사 퍼센트"),
+        ("300~400만원", "삼백에서 사백만원"),
+        ("3~5영업일", "삼에서 오영업일"),
+        ("T+2", "T 플러스 이"),
+        ("16GB", "십육GB"),
+        ("500ms", "오백 밀리초"),
+        ("Q3 2026", "Q삼 이천이십육"),
+        ("v2.4.1", "v이점사점일"),
+    ],
+)
+def test_finance_and_technology_forms(text: str, spoken: str) -> None:
+    assert normalize(text, lang="ko") == spoken
+
+
+@pytest.mark.parametrize("text", ["2024~2025년", "3BR/2BA", "10-year"])
+def test_year_ranges_and_foreign_forms_stay_written(text: str) -> None:
+    assert normalize(text, lang="ko") == text

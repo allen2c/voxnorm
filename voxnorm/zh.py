@@ -11,7 +11,7 @@ throughout, 台 not 臺.
 
 import re
 
-from voxnorm.tokens import clock_parts, speak_address
+from voxnorm.tokens import clock_parts, currency_amount, speak_address, speak_fiscal_period
 
 _DIGITS = "零一二三四五六七八九"
 _SECTION_UNITS = ("", "十", "百", "千")
@@ -24,7 +24,7 @@ never 兩十. The group units (萬/億/兆) are handled separately in
 proved a flat rule over the joined string turns 120000 into 十兩萬, because
 the 二 of 十二 happens to sit before the 萬."""
 
-_CURRENCIES = {
+CURRENCIES = {
     "NT$": ("新台幣", "元"),
     "NTD": ("新台幣", "元"),
     "US$": ("", "美元"),
@@ -53,9 +53,24 @@ UNIT_READINGS = {
     "mL": "{}毫升",
     "m²": "{}平方公尺",
     "㎡": "{}平方公尺",
+    "ms": "{}毫秒",
+    "nm": "{}奈米",
+    "mAh": "{}毫安培",
+    "kWh": "{}千瓦時",
+    "Hz": "{}赫茲",
+    "min": "{}分鐘",
+    "hr": "{}小時",
+    "sec": "{}秒",
+    "sq ft": "{}平方英尺",
+    "sq. ft.": "{}平方英尺",
+    "sqft": "{}平方英尺",
+    "sf": "{}平方英尺",
+    **{symbol: "{}" + symbol for symbol in ("KB", "MB", "GB", "TB", "PB", "kHz", "MHz", "GHz", "Mbps", "Gbps")},
 }
 """The zh-TW reading of each metric symbol the `unit` kind accepts, as a
-template around the spoken number (speed is 時速 in front, not a suffix)."""
+template around the spoken number (speed is 時速 in front, not a suffix).
+Storage, bandwidth and the larger frequencies keep their letters: 十六GB is
+what a speaker says, and 吉位元組 is what nobody does."""
 
 ADDRESS_WORDS = {
     ".": " 點 ",
@@ -71,11 +86,13 @@ ADDRESS_WORDS = {
 小老鼠, with a pause either side: in a probe on a self-hosted voice, the
 address read this way stopped the derailing a literal `@` caused."""
 
+_SIGNS = {"-": "負", "+": "正"}
+
 _MAGNITUDES = frozenset("百千萬万億亿兆")
 """Characters after which a written 2 is a count of that magnitude (兩萬)."""
 
 _MEASURE_WORDS = (
-    *"位個个人間间晚夜張张筆笔份次天週周件杯種种倍歲岁名點点台臺支本隻只條条瓶碗盤盘雙双套箱包片顆颗家輛辆趟碼码項项道組组床塊块元",
+    *"位個个人間间晚夜張张筆笔份次天週周件杯種种倍歲岁名點点台臺支本隻只條条瓶碗盤盘雙双套箱包片顆颗家輛辆趟碼码項项道組组床塊块元房廳厅衛卫室坪戶户季股成",
     "小時",
     "小时",
     "分鐘",
@@ -84,6 +101,8 @@ _MEASURE_WORDS = (
     "公里",
     "公尺",
     "公分",
+    "奈米",
+    "纳米",
 )
 """Measure words after which a lone 2 is a count and reads 兩 (兩位, 兩晚,
 兩點). A closed list: a word joins it only with a test. Left out on purpose,
@@ -161,9 +180,14 @@ def count_to_zh(amount: str) -> str:
     return "兩" if amount == "2" else amount_to_zh(amount)
 
 
-def currency_amount_to_zh(match: re.Match) -> str:
-    """The amount of a `currency` match, multiplier included: `3.5萬` -> 三點五萬."""
-    return count_to_zh(match["cur_amt"]) + _MULTIPLIERS.get(match["cur_mult"], "")
+def speak_currency(match: re.Match, currencies: dict[str, tuple[str, str]] = CURRENCIES) -> str:
+    """A `currency` match through a symbol table: `-NT$3.5萬` -> 負新台幣三點五萬元."""
+    prefix, suffix = currencies[match["cur_sym"]]
+    if match["cur_high"]:
+        amount = f"{count_to_zh(match['cur_amt'])}到{count_to_zh(match['cur_high'])}"
+    else:
+        amount = count_to_zh(currency_amount(match)) + _MULTIPLIERS.get(match["cur_mult"], "")
+    return f"{_SIGNS.get(match['cur_sign'], '')}{prefix}{amount}{suffix}"
 
 
 def _section_to_zh(section: int) -> str:
@@ -215,21 +239,43 @@ def _spoken_int(digits: str) -> str:
     return number_to_zh(int(digits))
 
 
-def _currency(match: re.Match) -> str:
-    prefix, suffix = _CURRENCIES[match["cur_sym"]]
-    return f"{prefix}{currency_amount_to_zh(match)}{suffix}"
+def _counts_something(match: re.Match) -> bool:
+    # A lone 2 is 兩 where the next characters say it counts something: a
+    # magnitude (兩百, 兩萬 -- never 二萬) or a measure word (兩位, 兩晚).
+    # Simplified glyphs are in both lists because cn.py speaks through this module.
+    rest = match.string[match.end() : match.end() + 2]
+    return rest[:1] in _MAGNITUDES or rest.startswith(_MEASURE_WORDS)
 
 
 def _bare_int(match: re.Match) -> str:
-    # A lone 2 is 兩 where the next characters say it counts something: a
-    # magnitude (兩百, 兩萬 -- never 二萬) or a measure word (兩位, 兩晚). After
-    # 第 it is an ordinal and keeps 二 (第二名). Simplified glyphs are in both
-    # lists because cn.py speaks through this module.
-    if match[0] == "2" and match.string[match.start() - 1 : match.start()] != "第":
-        rest = match.string[match.end() : match.end() + 2]
-        if rest[:1] in _MAGNITUDES or rest.startswith(_MEASURE_WORDS):
-            return "兩"
+    # After 第 a 2 is an ordinal and keeps 二 (第二名).
+    if match[0] == "2" and match.string[match.start() - 1 : match.start()] != "第" and _counts_something(match):
+        return "兩"
     return _spoken_int(match[0])
+
+
+def _range(match: re.Match) -> str:
+    # The word after the range counts both ends: 兩到三坪, 一到兩億.
+    if match["range_percent"]:
+        return f"百分之{amount_to_zh(match['range_low'])}到{amount_to_zh(match['range_high'])}"
+    ends = [match["range_low"], match["range_high"]]
+    low, high = ("兩" if end == "2" and _counts_something(match) else amount_to_zh(end) for end in ends)
+    return f"{low}到{high}"
+
+
+def _percent(match: re.Match) -> str:
+    amount = amount_to_zh(match["pct_num"])
+    spoken = f"{amount}個百分點" if match["pct_point"] else f"百分之{amount}"
+    return _SIGNS.get(match["pct_sign"], "") + spoken
+
+
+def _roc_date(match: re.Match) -> str:
+    year, month, day = int(match["roc_y"]), int(match["roc_mo"]), int(match["roc_d"])
+    return f"{number_to_zh(year)}年{number_to_zh(month)}月{number_to_zh(day)}日"
+
+
+def _dotted(written: str) -> str:
+    return "點".join(_spoken_int(part) for part in written.split("."))
 
 
 def _phone(match: re.Match) -> str:
@@ -254,8 +300,22 @@ _RULES = {
     "time": lambda match: _clock(int(match["time_h"]), int(match["time_m"])),
     "iso_date": _iso_date,
     "phone": _phone,
-    "currency": _currency,
-    "percent": lambda match: f"百分之{amount_to_zh(match['pct_num'])}",
+    "roc_date": _roc_date,
+    "version": lambda match: f"{match[0][0]}{_dotted(match['ver_num'])}",
+    "ip_address": lambda match: "點".join(digits_to_zh(part) for part in match["ip_num"].split(".")),
+    "identifier": lambda match: match[0],
+    "fiscal_period": lambda match: speak_fiscal_period(match[0], digits_to_zh, digits_to_zh),
+    "range": _range,
+    "currency": speak_currency,
+    "percent": _percent,
+    # 1080p is 一零八零p: a resolution is a name, not a count.
+    "video_resolution": lambda match: digits_to_zh(match[0]),
+    "bed_bath": lambda match: match[0],
+    "settlement": lambda match: f"T加{number_to_zh(int(match['settle_days']))}",
+    "per_unit": lambda match: match[0] if match["per_word"] else "每",
+    "room_plus": lambda match: f"{count_to_zh(match['plus_first'])}加{count_to_zh(match['plus_second'])}",
+    "hyphen_compound": lambda match: match[0],
+    "glued_amount": lambda match: count_to_zh(match[0]),
     "temperature": _temperature,
     "unit": lambda match: UNIT_READINGS[match["unit_sym"]].format(count_to_zh(match["unit_num"])),
     "room_en": _room,

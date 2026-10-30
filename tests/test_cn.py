@@ -113,3 +113,27 @@ def test_phone_extension_respells() -> None:
 
 def test_emails_read_piece_by_piece() -> None:
     assert normalize("a12345.user@example.com.tw", lang="zh-CN") == "a一二三四五 点 user，艾特，example 点 com 点 tw"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("$1.2B", "十二亿元"),
+        ("¥1.2B", "十二亿元"),
+        ("-1.5%", "负百分之一点五"),
+        ("3室2厅1卫", "三室两厅一卫"),
+        ("80-100万", "八十到一百万"),
+        ("7-9层", "七到九层"),
+        ("3nm", "三纳米"),
+        ("5000mAh", "五千毫安"),
+        ("2小时", "两小时"),
+        ("2hr", "两小时"),
+        ("18：00", "十八点"),
+    ],
+)
+def test_finance_technology_real_estate_forms(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-CN") == spoken
+
+
+def test_roc_date_stays_written() -> None:
+    assert normalize("115/12/31", lang="zh-CN") == "115/12/31"

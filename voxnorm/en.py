@@ -12,7 +12,7 @@ from decimal import Decimal
 
 from num2words import num2words
 
-from voxnorm.tokens import clock_parts, speak_address
+from voxnorm.tokens import clock_parts, currency_amount, scale_word, speak_address, speak_fiscal_period
 
 _DIGIT_WORDS = ("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
 
@@ -68,8 +68,52 @@ _UNIT_WORDS = {
     "mL": ("milliliter", "milliliters"),
     "m²": ("square meter", "square meters"),
     "㎡": ("square meter", "square meters"),
+    "ms": ("millisecond", "milliseconds"),
+    "nm": ("nanometer", "nanometers"),
+    "mAh": ("milliamp hour", "milliamp hours"),
+    "kWh": ("kilowatt hour", "kilowatt hours"),
+    "Hz": ("hertz", "hertz"),
+    "kHz": ("kilohertz", "kilohertz"),
+    "MHz": ("megahertz", "megahertz"),
+    "GHz": ("gigahertz", "gigahertz"),
+    "KB": ("kilobyte", "kilobytes"),
+    "MB": ("megabyte", "megabytes"),
+    "GB": ("gigabyte", "gigabytes"),
+    "TB": ("terabyte", "terabytes"),
+    "PB": ("petabyte", "petabytes"),
+    "Mbps": ("megabit per second", "megabits per second"),
+    "Gbps": ("gigabit per second", "gigabits per second"),
+    "min": ("minute", "minutes"),
+    "hr": ("hour", "hours"),
+    "sec": ("second", "seconds"),
+    "sq ft": ("square foot", "square feet"),
+    "sq. ft.": ("square foot", "square feet"),
+    "sqft": ("square foot", "square feet"),
+    "sf": ("square foot", "square feet"),
 }
 """(singular, plural) for each metric symbol the `unit` kind accepts."""
+
+_VIDEO_RESOLUTIONS = {
+    "480": "four eighty",
+    "720": "seven twenty",
+    "1080": "ten eighty",
+    "1440": "fourteen forty",
+    "2160": "twenty-one sixty",
+}
+"""A resolution is said in pairs of digits: 1080p is "ten eighty p"."""
+
+_PER_WORDS = {
+    "mo": "month",
+    "yr": "year",
+    "hr": "hour",
+    "sq ft": "square foot",
+    "sqft": "square foot",
+    "sf": "square foot",
+}
+"""The spoken word of a shortened unit after a per-unit slash; a word not
+here is said as written (`$10/month`)."""
+
+_SIGNS = {"-": "minus ", "+": "plus "}
 
 _ADDRESS_WORDS = {
     ".": " dot ",
@@ -210,12 +254,25 @@ def _amount_to_en(amount: str) -> str:
 
 
 def _currency(match: re.Match) -> str:
+    return _SIGNS.get(match["cur_sign"], "") + _unsigned_currency(match)
+
+
+def _unsigned_currency(match: re.Match) -> str:
+    singular, plural = _CURRENCIES[match["cur_sym"]]
+    if match["cur_high"]:
+        return f"{_amount_to_en(match['cur_amt'])} to {_amount_to_en(match['cur_high'])} {plural}"
+    if match["cur_scale"]:
+        # A scale is said, not multiplied out: one point two billion dollars.
+        written = match["cur_amt"].replace(",", "")
+        written = written.rstrip("0").rstrip(".") if "." in written else written
+        return f"{_amount_to_en(written)} {scale_word(match['cur_scale'])} {plural}"
+    if match["cur_compound"]:
+        return f"{_amount_to_en(currency_amount(match))} {plural}"
     amount = match["cur_amt"].replace(",", "")
     if match["cur_mult"]:
         # English has no 萬: multiply out (`NT$3.5萬` is thirty-five thousand).
         value = Decimal(amount) * _MULTIPLIERS[match["cur_mult"]]
         amount = str(int(value)) if value == value.to_integral_value() else format(value.normalize(), "f")
-    singular, plural = _CURRENCIES[match["cur_sym"]]
     integer, _, fraction = amount.partition(".")
     minor = _MINOR_UNITS.get(match["cur_sym"])
     if minor and len(fraction) == 2 and len(integer) <= 16:
@@ -232,6 +289,27 @@ def _major_and_minor(major: int, minor: int, major_units: tuple[str, str], minor
     if minor or not major:
         parts.append(f"{_cardinal(minor)} {minor_units[minor != 1]}")
     return " and ".join(parts)
+
+
+def _range(match: re.Match) -> str:
+    # A range that closes on a CJK word stays written, as `room_cjk` does.
+    if not match["range_percent"]:
+        return match[0]
+    return f"{_amount_to_en(match['range_low'])} to {_amount_to_en(match['range_high'])} percent"
+
+
+def _percent(match: re.Match) -> str:
+    word = "percentage points" if match["pct_point"] else "percent"
+    return f"{_SIGNS.get(match['pct_sign'], '')}{_amount_to_en(match['pct_num'])} {word}"
+
+
+def _per_unit(match: re.Match) -> str:
+    word = match["per_word"]
+    return f" per {_PER_WORDS.get(word, word)}" if word else match[0]
+
+
+def _year(written: str) -> str:
+    return f" {num2words(int(written), to='year')} "
 
 
 def _ordinal(match: re.Match) -> str:
@@ -251,8 +329,23 @@ _RULES = {
     "time": lambda match: _clock(int(match["time_h"]), int(match["time_m"])),
     "iso_date": _iso_date,
     "phone": _phone,
+    "roc_date": lambda match: match[0],
+    "version": lambda match: (
+        f"{match[0][0]} " + " point ".join(_spoken_int(part) for part in match["ver_num"].split("."))
+    ),
+    "ip_address": lambda match: " dot ".join(digits_to_en(part) for part in match["ip_num"].split(".")),
+    "identifier": lambda match: match[0],
+    "fiscal_period": lambda match: speak_fiscal_period(match[0], _year, lambda digit: f" {digits_to_en(digit)} "),
+    "range": _range,
     "currency": _currency,
-    "percent": lambda match: f"{_amount_to_en(match['pct_num'])} percent",
+    "percent": _percent,
+    "video_resolution": lambda match: _VIDEO_RESOLUTIONS[match[0]],
+    "bed_bath": lambda match: f"{_amount_to_en(match['beds'])} bed {_amount_to_en(match['baths'])} bath",
+    "settlement": lambda match: f"T plus {_cardinal(int(match['settle_days']))}",
+    "per_unit": _per_unit,
+    "room_plus": lambda match: match[0],
+    "hyphen_compound": lambda match: _spoken_int(match[0]),
+    "glued_amount": lambda match: _amount_to_en(match[0]),
     "temperature": _temperature,
     "unit": _unit,
     "room_en": lambda match: f"{match['room_word']}{match['room_link'].rstrip()} {digits_to_en(match['room_num'])}",

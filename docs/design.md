@@ -38,8 +38,8 @@ shared pattern untouched.
   `\b` never fires between 是 and 12; every boundary is an explicit digit
   lookaround.
 - **Slash and colon guards.** `1/2` the fraction and `8/17` the date are the
-  same string, so no slash form converts unless a four-digit 19xx/20xx year
-  leads it (`2026/10/16`) — and the digit lookarounds refuse
+  same string, so no slash form converts unless a year
+  leads a third field (`2026/10/16`) — and the digit lookarounds refuse
   slashes so the integers inside one cannot convert on their own. The same
   guards cover colons, so an invalid `24:30` stays written instead of
   half-converting around a stranded `:`.

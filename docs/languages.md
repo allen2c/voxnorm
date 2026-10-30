@@ -15,8 +15,9 @@ digit string before 號/室 reads digit by digit; two digits before 號 is a
 day of the month and stays grouped. A lone written 2 is 兩 where the text
 itself says it counts something: before a magnitude character (2萬 → 兩萬,
 2千 → 兩千), before a measure word from the closed `_MEASURE_WORDS` list
-(2位 → 兩位, 2晚 → 兩晚, 2小時 → 兩小時), and as a currency amount ($2 →
-兩元). After 第 it is an ordinal (第二名), and before words left off the
+(2位 → 兩位, 2晚 → 兩晚, 2小時 → 兩小時, 3房2廳 → 三房兩廳, 2坪 → 兩坪), at
+either end of a range before those words (2-3成 → 兩到三成, 1-2億 → 一到兩億),
+and as a currency amount ($2 → 兩元). After 第 it is an ordinal (第二名), and before words left off the
 list (號 樓 月 年 分 折 期 級 層) it stays 二.
 A discount reads digit by digit (85折 → 八五折, 9折 → 九折, 2折 → 二折),
 in zh-CN too; the other languages read the number as before. 24:00 is

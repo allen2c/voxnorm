@@ -125,6 +125,12 @@ reviewers' list in 0002, and grows only with a test per word.
 
 `0002/number-after-tilde` shipped early, in 0.2.2's separator guards.
 
+## v0.6.0 — finance, technology and real-estate forms (shipped)
+
+Evidence: [0003-finance-technology-real-estate-spoken-forms](experiments/0003-finance-technology-real-estate-spoken-forms/README.md),
+whose probe is the acceptance table. Every form reads in all five languages or
+returns unchanged.
+
 Deferred, no work planned (status quo stays):
 `ko-native-counters` and `ko-room-reading` (until there is a Korean use
 case); `year-as-duration` and `room-shi-as-count` (known residuals, see

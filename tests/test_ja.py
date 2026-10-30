@@ -117,3 +117,30 @@ def test_emails_read_piece_by_piece() -> None:
         normalize("a12345.user@example.com.tw", lang="ja")
         == "a一二三四五 ドット user、アットマーク、example ドット com ドット tw"
     )
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("$1.2B", "十二億ドル"),
+        ("-1.5%", "マイナス一点五パーセント"),
+        ("+12%", "プラス十二パーセント"),
+        ("10-20%", "十から二十パーセント"),
+        ("5～10分", "五から十分"),
+        ("T+2", "Tプラス二"),
+        ("1.2%p", "一点二パーセントポイント"),
+        ("16GB", "十六GB"),
+        ("500ms", "五百ミリ秒"),
+        ("120Hz", "百二十ヘルツ"),
+        ("1080p", "千八十p"),
+        ("Q3 2026", "Q三 二千二十六"),
+        ("v2.4.1", "v二点四点一"),
+    ],
+)
+def test_finance_and_technology_forms(text: str, spoken: str) -> None:
+    assert normalize(text, lang="ja") == spoken
+
+
+@pytest.mark.parametrize("text", ["1ドル=150円", "3BR/2BA", "10-year"])
+def test_joined_and_foreign_forms_stay_written(text: str) -> None:
+    assert normalize(text, lang="ja") == text

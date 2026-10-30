@@ -1,0 +1,150 @@
+voxnorm 0.5.1
+## zh-TW
+US$1.2B -> 一點二美元B
+$5K -> 五元K
+NT$1萬2千 -> NT$1萬兩千
+NT$1億2千萬 -> NT$1億兩千萬
+NT$1萬5 -> NT$1萬五
+US$132.60 -> 一百三十二點六零美元
++3.2% -> +3.2%
+-1.5% -> -1.5%
+-$5 -> -$5
+10-20% -> 10-20%
+20%-30% -> 百分之二十-30%
+500-600萬 -> 500-600萬
+3~5億 -> 3~5億
+2-3成 -> 2-3成
+25-40坪 -> 25-40坪
+20-30年 -> 20-30年
+15-16點 -> 15-16點
+6-12歲 -> 6-12歲
+3-5天 -> 3-5天
+$10-20 -> $10-20
+3房2廳2衛 -> 三房二廳二衛
+2坪 -> 二坪
+2戶 -> 二戶
+2季 -> 二季
+2股 -> 二股
+2奈米 -> 二奈米
+3+1房 -> 3+1房
+80萬/坪 -> 八十萬/坪
+1,200元/月 -> 一千兩百元/月
+18：00 -> 18：00
+EPS26塊 -> EPS二六塊
+DBR22倍 -> DBR二二倍
+T+2 -> T+2
+115/12/31 -> 115/12/31
+1.2%p -> 百分之一點二p
+1080p -> 一千零八十p
+Q3 2026 -> Q三 兩千零二十六
+2026Q3 -> 兩千零二十六Q三
+FY26 -> FY二六
+192.168.1.1 -> 192.168.1.1
+v1.2.3 -> v1.2.3
+500ms -> 五百ms
+3nm -> 三nm
+5000mAh -> 五千mAh
+120Hz -> 一百二十Hz
+30min -> 三十min
+16GB -> 十六GB
+1,200 sq ft -> 一千兩百 sq ft
+5F/12F -> 五F/12F
+30天+7天 -> 三十天+7天
+2.4GHz/5GHz -> 二點四GHz/5GHz
+AB1-CD2E-34 -> AB1-CD二E-34
+L1-L8 -> L1-L八
+7-11 -> 7-11
+1990-2000年 -> 1990-2000年
+75~85折 -> 75~85折
+2段 -> 二段
+15K -> 十五K
+10W -> 十W
+25bp -> 二十五bp
+12F -> 十二F
+1:1 -> 1:1
+16:9 -> 16:9
+24/7 -> 24/7
+B2B -> B二B
+2330 -> 兩千三百三十
+14:00 -> 十四點
+12:00 -> 十二點
+24:00 -> 二十四點
+## zh-CN
+$1.2B -> 一点二元B
+¥1.2B -> 一点二元B
+-1.5% -> -1.5%
+3室2厅1卫 -> 三室二厅一卫
+80-100万 -> 80-100万
+7-9层 -> 7-9层
+3nm -> 三nm
+5000mAh -> 五千mAh
+2hr -> 二hr
+18：00 -> 18：00
+115/12/31 -> 115/12/31
+10w -> 十w
+## en
+$1.2B -> one point two dollars B
+$500M -> five hundred dollars M
+$5K -> five dollars K
+£3bn -> three pounds bn
+$2.5tn -> two point five dollars tn
+$1.5 million -> one point five dollars million
+-$5 -> -$5
++3.2% -> +3.2%
+10-20% -> 10-20%
+$10-20 -> $10-20
+10-year -> 10-year
+52-week -> 52-week
+Q3 2026 -> Q three two thousand and twenty-six
+2026Q3 -> two thousand and twenty-six Q three
+FY26 -> FY two six
+FY2026 -> FY two zero two six
+T+2 -> T+2
+1.2%p -> one point two percent p
+16GB -> sixteen GB
+3.5GHz -> three point five GHz
+100Mbps -> one hundred Mbps
+500ms -> five hundred ms
+3nm -> three nm
+1080p -> one thousand and eighty p
+v1.2.3 -> v1.2.3
+192.168.1.1 -> 192.168.1.1
+1,200 sq ft -> one thousand two hundred sq ft
+$450/sqft -> four hundred and fifty dollars/sqft
+$1,200/mo -> one thousand two hundred dollars/mo
+3BR/2BA -> three BR/2BA
+3bd 2ba -> three bd two ba
+2-for-1 -> 2-for-1
+10-K -> 10-K
+5/1 ARM -> 5/1 ARM
+24/7 -> 24/7
+16:9 -> 16:9
+15K -> fifteen K
+25bps -> twenty-five bps
+## ja
+$1.2B -> 一点二ドルB
+-1.5% -> -1.5%
+10-20% -> 10-20%
+5～10分 -> 5～10分
+T+2 -> T+2
+1.2%p -> 一点二パーセントp
+16GB -> 十六GB
+500ms -> 五百ms
+120Hz -> 百二十Hz
+1080p -> 千八十p
+Q3 2026 -> Q三 二千二十六
+v2.4.1 -> v2.4.1
+1ドル=150円 -> 一ドル=150円
+## ko
+$1.2B -> 일점이 달러B
+-3.2% -> -3.2%
+1.2%p -> 일점이 퍼센트p
+2~4% -> 2~4%
+300~400만원 -> 300~400만원
+3~5영업일 -> 3~5영업일
+T+2 -> T+2
+16GB -> 십육GB
+500ms -> 오백ms
+Q3 2026 -> Q삼 이천이십육
+v2.4.1 -> v2.4.1
+2024~2025년 -> 2024~2025년

@@ -164,7 +164,7 @@ def test_punctuation_after_numbers(text: str, spoken: str) -> None:
     assert normalize(text) == spoken
 
 
-@pytest.mark.parametrize("text", ["$10-20", "Room 12-3", "v1.2.3", "192.168.1.1:8080", "7-Eleven", "a+12@x.com"])
+@pytest.mark.parametrize("text", ["Room 12-3", "192.168.1.1:8080", "7-Eleven", "a+12@x.com"])
 def test_joined_forms_stay_whole(text: str) -> None:
     assert normalize(text) == text
 
@@ -308,3 +308,83 @@ def test_emails_read_piece_by_piece() -> None:
 def test_spoken_word_never_glues_to_an_at_sign() -> None:
     # "five percent@x.com" would be an email on a second pass.
     assert normalize("5%@x.com") == "five percent @x.com"
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("$1.2B", "one point two billion dollars"),
+        ("$500M", "five hundred million dollars"),
+        ("$5K", "five thousand dollars"),
+        ("£3bn", "three billion pounds"),
+        ("$2.5tn", "two point five trillion dollars"),
+        ("$1.5 million", "one point five million dollars"),
+        ("$1.50M", "one point five million dollars"),
+        ("NT$1萬2千", "twelve thousand NT dollars"),
+        ("-$5", "minus five dollars"),
+        ("+3.2%", "plus three point two percent"),
+        ("10-20%", "ten to twenty percent"),
+        ("$10-20", "ten to twenty dollars"),
+        ("1.2%p", "one point two percentage points"),
+    ],
+)
+def test_finance_amounts(text: str, spoken: str) -> None:
+    assert normalize(text, lang="en") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("the 10-year yield", "the ten-year yield"),
+        ("a 52-week high", "a fifty-two-week high"),
+        ("a 3-day-old quote", "a three-day-old quote"),
+        ("Q3 2026", "Q three twenty twenty-six"),
+        ("2026Q3", "twenty twenty-six Q three"),
+        ("FY26", "FY twenty-six"),
+        ("FY2026", "FY twenty twenty-six"),
+        ("T+2", "T plus two"),
+    ],
+)
+def test_finance_periods_and_compounds(text: str, spoken: str) -> None:
+    assert normalize(text, lang="en") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("16GB", "sixteen gigabytes"),
+        ("1GB", "one gigabyte"),
+        ("3.5GHz", "three point five gigahertz"),
+        ("100Mbps", "one hundred megabits per second"),
+        ("500ms", "five hundred milliseconds"),
+        ("3nm", "three nanometers"),
+        ("1080p", "ten eighty p"),
+        ("v1.2.3", "v one point two point three"),
+        ("192.168.1.1", "one nine two dot one six eight dot one dot one"),
+    ],
+)
+def test_technology_forms(text: str, spoken: str) -> None:
+    assert normalize(text, lang="en") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("1,200 sq ft", "one thousand two hundred square feet"),
+        ("1,200 sq. ft.", "one thousand two hundred square feet"),
+        ("1 sq ft", "one square foot"),
+        ("2,500 sf", "two thousand five hundred square feet"),
+        ("$450/sqft", "four hundred and fifty dollars per square foot"),
+        ("$1,200/mo", "one thousand two hundred dollars per month"),
+        ("$10/month", "ten dollars per month"),
+        ("3BR/2BA", "three bed two bath"),
+        ("3bd 2ba", "three bed two bath"),
+    ],
+)
+def test_real_estate_forms(text: str, spoken: str) -> None:
+    assert normalize(text, lang="en") == spoken
+
+
+@pytest.mark.parametrize("text", ["2-for-1", "10-K", "5/1 ARM", "24/7", "16:9", "4BR/3"])
+def test_ambiguous_finance_forms_stay_written(text: str) -> None:
+    assert normalize(text, lang="en") == text

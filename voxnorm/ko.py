@@ -14,7 +14,7 @@ import re
 
 from num2words import num2words
 
-from voxnorm.tokens import clock_parts, speak_address
+from voxnorm.tokens import clock_parts, currency_amount, speak_address, speak_fiscal_period
 
 _DIGITS = ("공", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구")
 
@@ -54,10 +54,25 @@ _UNIT_READINGS = {
     "mL": "{} 밀리리터",
     "m²": "{} 제곱미터",
     "㎡": "{} 제곱미터",
+    "ms": "{} 밀리초",
+    "nm": "{} 나노미터",
+    "mAh": "{} 밀리암페어",
+    "kWh": "{} 킬로와트시",
+    "Hz": "{} 헤르츠",
+    "min": "{} 분",
+    "hr": "{} 시간",
+    "sec": "{} 초",
+    "sq ft": "{} 제곱피트",
+    "sq. ft.": "{} 제곱피트",
+    "sqft": "{} 제곱피트",
+    "sf": "{} 제곱피트",
+    **{symbol: "{}" + symbol for symbol in ("KB", "MB", "GB", "TB", "PB", "kHz", "MHz", "GHz", "Mbps", "Gbps")},
 }
 """The Korean reading of each metric symbol the `unit` kind accepts, as a
 template around the spoken number (speed is 시속 in front)."""
 
+
+_SIGNS = {"-": "마이너스 ", "+": "플러스 "}
 
 _ADDRESS_WORDS = {
     ".": " 점 ",
@@ -123,6 +138,24 @@ def _amount_to_ko(amount: str) -> str:
     return f"{spoken}점{digits_to_ko(fraction).replace('공', '영')}" if fraction else spoken
 
 
+def _currency(match: re.Match) -> str:
+    if match["cur_high"]:
+        amount = f"{_amount_to_ko(match['cur_amt'])}에서 {_amount_to_ko(match['cur_high'])}"
+    else:
+        amount = _amount_to_ko(currency_amount(match)) + _MULTIPLIERS.get(match["cur_mult"], "")
+    return f"{_SIGNS.get(match['cur_sign'], '')}{amount} {_CURRENCIES[match['cur_sym']]}"
+
+
+def _range(match: re.Match) -> str:
+    spoken = f"{_amount_to_ko(match['range_low'])}에서 {_amount_to_ko(match['range_high'])}"
+    return f"{spoken} 퍼센트" if match["range_percent"] else spoken
+
+
+def _percent(match: re.Match) -> str:
+    word = "퍼센트포인트" if match["pct_point"] else "퍼센트"
+    return f"{_SIGNS.get(match['pct_sign'], '')}{_amount_to_ko(match['pct_num'])} {word}"
+
+
 def _phone(match: re.Match) -> str:
     spoken = _digit_groups(match["phone_num"])
     if match["phone_plus"]:
@@ -149,10 +182,21 @@ _RULES = {
     "time": lambda match: _clock(int(match["time_h"]), int(match["time_m"])),
     "iso_date": _iso_date,
     "phone": _phone,
-    "currency": lambda match: (
-        f"{_amount_to_ko(match['cur_amt'])}{_MULTIPLIERS.get(match['cur_mult'], '')} {_CURRENCIES[match['cur_sym']]}"
-    ),
-    "percent": lambda match: f"{_amount_to_ko(match['pct_num'])} 퍼센트",
+    "roc_date": lambda match: match[0],
+    "version": lambda match: f"{match[0][0]}" + "점".join(_spoken_int(part) for part in match["ver_num"].split(".")),
+    "ip_address": lambda match: " 점 ".join(digits_to_ko(part) for part in match["ip_num"].split(".")),
+    "identifier": lambda match: match[0],
+    "fiscal_period": lambda match: speak_fiscal_period(match[0], lambda year: _sino(int(year)), digits_to_ko),
+    "range": _range,
+    "currency": _currency,
+    "percent": _percent,
+    "video_resolution": lambda match: _spoken_int(match[0]),
+    "bed_bath": lambda match: match[0],
+    "settlement": lambda match: f"T 플러스 {_sino(int(match['settle_days']))}",
+    "per_unit": lambda match: match[0],
+    "room_plus": lambda match: match[0],
+    "hyphen_compound": lambda match: match[0],
+    "glued_amount": lambda match: _amount_to_ko(match[0]),
     "temperature": lambda match: (
         ("화씨 " if match["temp_unit"] in ("℉", "°F", "° F") else "섭씨 ")
         + ("영하 " if match["temp_minus"] else "")

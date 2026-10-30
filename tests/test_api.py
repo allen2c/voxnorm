@@ -98,12 +98,18 @@ def test_public_surface() -> None:
 @pytest.mark.parametrize("lang", ["zh", "zh-CN", "en", "ja", "ko"])
 def test_random_input_never_crashes_and_is_idempotent(lang: str) -> None:
     # A seeded fuzz over the characters the guards care about. A conversion
-    # must not unblock a neighbour on a second pass. Compound currency
-    # amounts (`NT$1萬2千`) are a documented residual and kept out.
+    # must not unblock a neighbour on a second pass.
     pieces = [
         *"0123456789" * 4,
-        *" .,:：-~～/%$#@*+xA年號室년元()<>=_",
+        *" .,:：-~～/%$#@*+xA年號室년元萬千億坪房()<>=_",
         "NT$",
+        "US$",
+        "T+",
+        "Q3",
+        "FY",
+        "%p",
+        "GB",
+        "-year",
         "Room ",
         "12:30",
         "0912-345-678",

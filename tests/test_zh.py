@@ -208,8 +208,6 @@ def test_letter_glued_digits_read_as_code(text: str, spoken: str) -> None:
         # Hyphen/tilde forms are ambiguous (a shop name, a range, a phone stub)
         # and stay written whole -- they used to half-convert to 七-十一.
         "在7-11買的嗎?",
-        "3-5天內入帳",
-        "大約10~20分鐘",
         "請撥1234-5678",
         "代碼ABC-1234",
     ],
@@ -436,7 +434,7 @@ def test_mixed_sentence() -> None:
         ("價格12, 謝謝", "價格十二, 謝謝"),
         ("金額：1,200元", "金額：一千兩百元"),
         ("數量:3", "數量:三"),
-        ("NT$500/人", "新台幣五百元/人"),
+        ("NT$500/人", "新台幣五百元每人"),
         ("共5.", "共五."),
         # A tilde after a word separates two complete forms; each side converts.
         ("1,000元～2,000元", "一千元～兩千元"),
@@ -453,11 +451,6 @@ def test_separators_after_words_are_punctuation(text: str, spoken: str) -> None:
     "text",
     [
         # Digits joined by a separator stay whole: none of these may half-convert.
-        "降幅10~20%",
-        "3-5%",
-        "跌幅 -5%",
-        "-$5",
-        "NT$1,000~2,000",
         "分機1234-5678",
         "12:30.5",
         "12:00:05",
@@ -589,7 +582,7 @@ def test_room_connective_and_us_phone(text: str, spoken: str) -> None:
     assert normalize(text, lang="zh") == spoken
 
 
-@pytest.mark.parametrize("text", ["10/16", "115/10/16", "2026/10-16", "3-5°C"])
+@pytest.mark.parametrize("text", ["10/16", "2026/10-16", "3-5°C"])
 def test_date_and_temperature_lookalikes_stay_written(text: str) -> None:
     assert normalize(text, lang="zh") == text
 
@@ -721,3 +714,167 @@ def test_codes_and_code_words_together() -> None:
 )
 def test_codes_with_letter_prefix(text: str, spoken: str) -> None:
     assert normalize(text, codes=["BK-000456", "A-1203", "AB1234"]) == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("US$1.2B", "十二億美元"),
+        ("$1.5K", "一千五百元"),
+        ("$500M", "五億元"),
+        ("€3bn", "三十億歐元"),
+        ("NT$1萬2千", "新台幣一萬兩千元"),
+        ("NT$1億2千萬", "新台幣一億兩千萬元"),
+        ("NT$3千5百萬", "新台幣三千五百萬元"),
+        ("NT$1萬5", "新台幣一萬五千元"),
+        ("US$132.60", "一百三十二點六美元"),
+        ("$5.00", "五元"),
+    ],
+)
+def test_currency_scales_and_compounds_multiply_out(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-TW") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("漲幅+3.2%", "漲幅正百分之三點二"),
+        ("跌幅 -5%", "跌幅 負百分之五"),
+        ("(-1.5%)", "(負百分之一點五)"),
+        ("-$5", "負五元"),
+        ("+NT$1,200", "正新台幣一千兩百元"),
+    ],
+)
+def test_signed_amounts_speak_their_sign(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-TW") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("10-20%", "百分之十到二十"),
+        ("降幅10~20%", "降幅百分之十到二十"),
+        ("20%-30%", "百分之二十到三十"),
+        ("500-600萬", "五百到六百萬"),
+        ("1-2億", "一到兩億"),
+        ("3~5億", "三到五億"),
+        ("2-3成", "兩到三成"),
+        ("25-40坪", "二十五到四十坪"),
+        ("2-3坪", "兩到三坪"),
+        ("20-30年", "二十到三十年"),
+        ("15-16點", "十五到十六點"),
+        ("6-12歲", "六到十二歲"),
+        ("3-5天內入帳", "三到五天內入帳"),
+        ("大約10~20分鐘", "大約十到二十分鐘"),
+        ("1~2月", "一到二月"),
+        ("$10-20", "十到二十元"),
+        ("NT$1,000~2,000", "新台幣一千到兩千元"),
+    ],
+)
+def test_ranges_closed_by_a_unit(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-TW") == spoken
+
+
+# A hyphen range needs a unit from a closed list; a year range and a 折 range
+# have no reading the range form can carry.
+@pytest.mark.parametrize("text", ["7-11", "7-11店", "1990-2000年", "75~85折", "3-5分", "10-20"])
+def test_ranges_without_a_closing_unit_stay_written(text: str) -> None:
+    assert normalize(text, lang="zh-TW") == text
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("3房2廳2衛", "三房兩廳兩衛"),
+        ("2戶", "兩戶"),
+        ("2坪", "兩坪"),
+        ("2季", "兩季"),
+        ("2股", "兩股"),
+        ("2成", "兩成"),
+        ("2奈米", "兩奈米"),
+        ("第2季", "第二季"),
+        ("中山路2段", "中山路二段"),  # a road section is a name
+        ("3+1房", "三加一房"),
+        ("2+1房", "兩加一房"),
+    ],
+)
+def test_real_estate_counts(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-TW") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("80萬/坪", "八十萬每坪"),
+        ("1,200元/月", "一千兩百元每月"),
+        ("5%/年", "百分之五每年"),
+    ],
+)
+def test_per_unit_slash_reads_mei(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-TW") == spoken
+
+
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [
+        ("18：00", "十八點"),
+        ("9：30-18：00", "九點半到十八點"),
+        ("EPS26塊", "EPS二十六塊"),
+        ("EPS2塊", "EPS兩塊"),
+        ("DBR1.5倍", "DBR一點五倍"),
+        ("T+2", "T加二"),
+        ("T+1日", "T加一日"),
+        ("115/12/31", "一百一十五年十二月三十一日"),
+        ("1.2%p", "一點二個百分點"),
+        ("1080p", "一零八零p"),
+        ("720P", "七二零P"),
+        ("Q3 2026", "Q三 二零二六"),
+        ("2026Q3", "二零二六Q三"),
+        ("FY26", "FY二六"),
+        ("H1 2026", "H一 二零二六"),
+        ("192.168.1.1", "一九二點一六八點一點一"),
+        ("v1.2.3", "v一點二點三"),
+        ("500ms", "五百毫秒"),
+        ("3nm", "三奈米"),
+        ("5000mAh", "五千毫安培"),
+        ("120Hz", "一百二十赫茲"),
+        ("30min", "三十分鐘"),
+        ("2hr", "兩小時"),
+        ("16GB", "十六GB"),
+        ("3.5GHz", "三點五GHz"),
+        ("1,200 sq ft", "一千兩百平方英尺"),
+    ],
+)
+def test_finance_and_technology_forms(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-TW") == spoken
+
+
+# Half-conversions: a number tied to its neighbour leaves the whole form
+# written, and a hyphen-joined part code is one identifier.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "5F/12F",
+        "2.4GHz/5GHz",
+        "30天+7天",
+        "AB1-CD2E-34",
+        "L1-L8",
+        "12-HBM4",
+        "192.168.1.1:8080",
+        "1.2.3",
+        "256.1.1.1",
+        "130/12/31",
+    ],
+)
+def test_joined_forms_never_half_convert(text: str) -> None:
+    assert normalize(text, lang="zh-TW") == text
+
+
+# Deliberate: 15K and 10W are two readings each, and a 24-hour clock stays as
+# written; see 0003-finance-technology-real-estate-spoken-forms.
+@pytest.mark.parametrize(
+    ("text", "spoken"),
+    [("15K", "十五K"), ("10W", "十W"), ("12:00", "十二點"), ("14:00", "十四點"), ("24:00", "二十四點")],
+)
+def test_deliberately_unchanged(text: str, spoken: str) -> None:
+    assert normalize(text, lang="zh-TW") == spoken
